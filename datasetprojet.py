@@ -99,12 +99,11 @@ def data_plot(dataproject,cols,rows):
   plt.show()
   
  
+ 
+ 
  #loading data
-training_data = DataProject(
-    csv_file='/home/student/ross/Bags_Data_2022-04-14-17-40-50/_imu_data.csv',root_dir='/home/student/ross/Bags_Data_2022-04-14-17-40-50/_zed_node_left_image_rect_color'
 
-)
-data_plot(training_data,5,5)
+#data_plot(training_data,5,5)
  
 ## transformation des images:
 
@@ -147,6 +146,8 @@ class Rescale(object):
         return {'image': img, 'landmarks': landmarks}
 
 
+
+
 class ToTensor(object):
     
 
@@ -163,15 +164,85 @@ class ToTensor(object):
 
 
 
+
+
+
+training_data = DataProject(
+    csv_file='/home/student/ross/Bags_Data_2022-04-14-17-40-50/_imu_data.csv',root_dir='/home/student/ross/Bags_Data_2022-04-14-17-40-50/_zed_node_left_image_rect_color'
+
+)
+
+
+
+
+
+#normalize images for regression problems
+
+training_data = DataProject(
+    csv_file='/home/student/ross/Bags_Data_2022-04-14-17-40-50/_imu_data.csv',root_dir='/home/student/ross/Bags_Data_2022-04-14-17-40-50/_zed_node_left_image_rect_color'
+
+)
+  
+def calcul_moy_std(training_data):  
+  
+  sumr=0
+  sumg=0
+  sumb=0
+  stdr=0
+  stdb=0
+  stdg=0
+  loader = DataLoader(training_data, batch_size=len(training_data), num_workers=0)
+  data = next(iter(loader))
+  m=(data ['image'][0]).numpy()
+#je suis pas sur de mean axis
+
+  h,w,c=m.shape
+  for i in data['image']:
+    m=i.numpy()
+    r=m[:,:,0] 
+    g=m[:,:,1] 
+    b=m[:,:,2] 
+    sumr=sumr+r.sum()
+    sumg=sumg+g.sum()
+    sumb=sumb+b.sum()
+  #print(sumr,sumg,sumb)
+  
+  
+  meanr=sumr/h*w*len(training_data)
+  meang=sumg/h*w*len(training_data)
+  meanb=sumb/h*w*len(training_data)
+  mean=(meanr,meang,meanb)
+
+  for i in data['image']:
+    m=i.numpy()
+    r=m[:,:,0] 
+    g=m[:,:,1] 
+    b=m[:,:,2]   
+    stdr=stdr+((r - meanr)**2).sum()
+    stdg=stdg+((g - meang)**2).sum()
+    stdb=stdb+((b - meanb)**2).sum()
+  stddr=np.sqrt(stdr/h*w*len(training_data))
+  stddb=np.sqrt(stdb/h*w*len(training_data))
+  stddg=np.sqrt(stdg/h*w*len(training_data))
+  std=(stddr,stddg,stddb)
+
+  return(mean,std)
+
+
+
+
+
+
         
 #loading DataSet after transformation 
 
 
-
+t=calcul_moy_std(training_data)
 data_transforms = transforms.Compose([
     # Apply histogram equalization
     Rescale(255),
-    ToTensor() # Add channel dimension to be able to apply convolutions
+    ToTensor(),
+    transforms.Normalize(t[0],t[1]) # Add channel dimension to be able to apply convolutions
     
 ])
 
@@ -184,7 +255,7 @@ training_data1 = DataProject(
 
 for i in range(len(training_data1)):
     sample = training_data1[i]
-    print(sample['image'].shape)
+    #print(sample['image'].shape)
     #print(sample['landmarks'])
 
     
@@ -196,6 +267,7 @@ for i in range(len(training_data1)):
 
 dataloader = DataLoader(training_data1, batch_size=4,shuffle=True, num_workers=0)
 
+#visualizing a batch
 
 def show_landmarks_batch(sample_batched):
     
@@ -208,23 +280,23 @@ def show_landmarks_batch(sample_batched):
     grid = utils.make_grid(images_batch)
     plt.imshow(grid.numpy().transpose((1, 2, 0)))#from tensor to ndarray
 
-    for i in range(batch_size):
+    #for i in range(batch_size):
         
         
-        plt.title('Batch from dataloader')
+        #plt.title('Batch from dataloader')
 
 
-# if __name__ == '__main__':
 
 
-#a comprendrer comment ça se fait l'itération
+
+
 
 
 for i_batch, sample_batched in enumerate(dataloader):
     print(i_batch, sample_batched['image'].size(),
           sample_batched['landmarks'].size())
 
-    # observe 4th batch and stop.
+    
     if i_batch == 3:
         plt.figure(1)
         show_landmarks_batch(sample_batched)
@@ -235,5 +307,3 @@ for i_batch, sample_batched in enumerate(dataloader):
         plt.show()
 
         break
-
-
