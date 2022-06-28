@@ -176,7 +176,7 @@ training_data = DataProject(
 
 )
 
-data_plot(training_data,5,5)
+#data_plot(training_data,5,5)
 
 
 
@@ -256,7 +256,7 @@ class Normalize(object):
 
 
 t=calcul_moy_std(training_data)
-print('le coue',t)
+#print('le coue',t)
 
 data_transforms = transforms.Compose([
     #Normalize(t[0],t[1]),
@@ -278,7 +278,7 @@ training_data1 = DataProject(
 
 
 #data_plot(training_data1,7,7)
-print('hola')
+
 #for i in range(len(training_data1)):
     #sample = training_data1[i]
     #print(sample['image'].shape)
@@ -291,7 +291,7 @@ print('hola')
 
 # loading data in an iterator dataloader
 #shuffle= True pour le choix aleatoire
-dataloader = DataLoader(training_data1, batch_size=8,shuffle=True, num_workers=0)
+
 
 #visualizing a batch
 
@@ -316,14 +316,30 @@ def show_landmarks_batch(sample_batched):
 
 
 
+def load(training_data1,Batch_size):
+ L=len(training_data1)
+ 
+#un choix
+ train_count = int(0.7 * L) 
 
+ valid_count = int(0.2 * L)
+ 
+ test_count=L-valid_count-train_count
+ train_loader = DataLoader(training_data1, batch_size=Batch_size,shuffle=True, num_workers=0)
+ #train_dataset, valid_dataset, test_dataset = torch.utils.data.random_split(training_data1, [train_count, valid_count, test_count])
+ #train_loader = DataLoader(train_dataset, batch_size=Batch_size,shuffle=True, num_workers=0) 
+ #valid_loader = DataLoader(valid_dataset, batch_size=Batch_size,shuffle=True, num_workers=0) 
+ #test_loader = DataLoader(test_dataset, batch_size=Batch_size,shuffle=False, num_workers=0) 
+ 
+ #dataloaders = {'train': train_loader, 'valid': valid_loader, 'test': test_loader}
 
-for i_batch, sample_batched in enumerate(dataloader):
+ for i_batch, sample_batched in enumerate(train_loader):
+ 
     #print(i_batch, sample_batched['image'].size(),
           #sample_batched['landmarks'].size())
 
     
-    if i_batch == 1:
+    if i_batch == 3:
         plt.figure(1)
         show_landmarks_batch(sample_batched)
         print(sample_batched ['image'].size())
@@ -333,3 +349,6 @@ for i_batch, sample_batched in enumerate(dataloader):
         plt.show()
 
         break
+ return train_loader
+#load(training_data1)
+
