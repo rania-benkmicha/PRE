@@ -45,9 +45,12 @@ class DataProject(Dataset):
         landmarks=float(landmarks)
         
         sample = {'image': image, 'landmarks': landmarks}
+#hne 5ater ye5dedh dict
 
         if self.transform:
             sample = self.transform(sample)
+        
+        
 
         return sample
         
@@ -163,6 +166,7 @@ class ToTensor(object):
                 'landmarks': landmarks}
 
 
+      
 
 
 
@@ -172,7 +176,7 @@ training_data = DataProject(
 
 )
 
-
+data_plot(training_data,5,5)
 
 
 
@@ -205,14 +209,16 @@ def calcul_moy_std(training_data):
     sumr=sumr+r.sum()
     sumg=sumg+g.sum()
     sumb=sumb+b.sum()
-  #print(sumr,sumg,sumb)
+  print(h,w)
   
   
-  meanr=sumr/h*w*len(training_data)
-  meang=sumg/h*w*len(training_data)
-  meanb=sumb/h*w*len(training_data)
+  
+  meanr=sumr/(h*w*len(training_data))
+  meang=sumg/(h*w*len(training_data))
+  meanb=sumb/(h*w*len(training_data))
   mean=(meanr,meang,meanb)
-
+  print('mean')
+  print(meanr,meang,meanb)
   for i in data['image']:
     m=i.numpy()
     r=m[:,:,0] 
@@ -221,16 +227,28 @@ def calcul_moy_std(training_data):
     stdr=stdr+((r - meanr)**2).sum()
     stdg=stdg+((g - meang)**2).sum()
     stdb=stdb+((b - meanb)**2).sum()
-  stddr=np.sqrt(stdr/h*w*len(training_data))
-  stddb=np.sqrt(stdb/h*w*len(training_data))
-  stddg=np.sqrt(stdg/h*w*len(training_data))
+  stddr=np.sqrt(stdr/(h*w*len(training_data)))
+  stddb=np.sqrt(stdb/(h*w*len(training_data)))
+  stddg=np.sqrt(stdg/(h*w*len(training_data)))
   std=(stddr,stddg,stddb)
 
   return(mean,std)
 
 
-
-
+class Normalize(object):
+ 
+    def __init__(self, mean, std):
+        self.std = std
+        self.mean = mean
+        
+    def __call__(self, sample):
+        
+         #tr=transforms.Normalize(self.mean,self.std)
+        #return tr(sample['image'])
+        sample['image'][:,:,0]=(sample['image'][:,:,0]-self.mean[0])/self.std[0]
+        sample['image'][:,:,1]=(sample['image'][:,:,1]-self.mean[1])/self.std[1]
+        sample['image'][:,:,2]=(sample['image'][:,:,2]-self.mean[2])/self.std[2]
+        return sample
 
 
         
@@ -238,11 +256,17 @@ def calcul_moy_std(training_data):
 
 
 t=calcul_moy_std(training_data)
+print('le coue',t)
+
 data_transforms = transforms.Compose([
+    #Normalize(t[0],t[1]),
     # Apply histogram equalization
     Rescale(255),
-    ToTensor(),
-    transforms.Normalize(t[0],t[1]) # Add channel dimension to be able to apply convolutions
+    
+    ToTensor()
+    
+    
+     # Add channel dimension to be able to apply convolutions
     
 ])
 
@@ -251,10 +275,12 @@ data_transforms = transforms.Compose([
 training_data1 = DataProject(
     csv_file='/home/student/ross/Bags_Data_2022-04-14-17-40-50/_imu_data.csv',root_dir='/home/student/ross/Bags_Data_2022-04-14-17-40-50/_zed_node_left_image_rect_color',transform=data_transforms
 )
-#data_plot(training_data1,7,7)
 
-for i in range(len(training_data1)):
-    sample = training_data1[i]
+
+#data_plot(training_data1,7,7)
+print('hola')
+#for i in range(len(training_data1)):
+    #sample = training_data1[i]
     #print(sample['image'].shape)
     #print(sample['landmarks'])
 
@@ -264,8 +290,8 @@ for i in range(len(training_data1)):
 
 
 # loading data in an iterator dataloader
-
-dataloader = DataLoader(training_data1, batch_size=4,shuffle=True, num_workers=0)
+#shuffle= True pour le choix aleatoire
+dataloader = DataLoader(training_data1, batch_size=8,shuffle=True, num_workers=0)
 
 #visualizing a batch
 
@@ -293,14 +319,14 @@ def show_landmarks_batch(sample_batched):
 
 
 for i_batch, sample_batched in enumerate(dataloader):
-    print(i_batch, sample_batched['image'].size(),
-          sample_batched['landmarks'].size())
+    #print(i_batch, sample_batched['image'].size(),
+          #sample_batched['landmarks'].size())
 
     
-    if i_batch == 3:
+    if i_batch == 1:
         plt.figure(1)
         show_landmarks_batch(sample_batched)
-     
+        print(sample_batched ['image'].size())
         plt.title((sample_batched['landmarks']).tolist())
         plt.axis('off')
         plt.ioff()
