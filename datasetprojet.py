@@ -195,7 +195,7 @@ def calcul_moy_std(training_data):
   stdr=0
   stdb=0
   stdg=0
-  loader = DataLoader(training_data, batch_size=len(training_data), num_workers=0)
+  loader = DataLoader(training_data, batch_size=len(training_data), num_workers=8)
   data = next(iter(loader))
   m=(data ['image'][0]).numpy()
 #je suis pas sur de mean axis
@@ -259,7 +259,7 @@ t=calcul_moy_std(training_data)
 #print('le coue',t)
 
 data_transforms = transforms.Compose([
-    #Normalize(t[0],t[1]),
+    Normalize(t[0],t[1]),
     # Apply histogram equalization
     Rescale(255),
     
@@ -325,13 +325,13 @@ def load(training_data1,Batch_size):
  valid_count = int(0.2 * L)
  
  test_count=L-valid_count-train_count
- train_loader = DataLoader(training_data1, batch_size=Batch_size,shuffle=True, num_workers=0)
- #train_dataset, valid_dataset, test_dataset = torch.utils.data.random_split(training_data1, [train_count, valid_count, test_count])
- #train_loader = DataLoader(train_dataset, batch_size=Batch_size,shuffle=True, num_workers=0) 
- #valid_loader = DataLoader(valid_dataset, batch_size=Batch_size,shuffle=True, num_workers=0) 
- #test_loader = DataLoader(test_dataset, batch_size=Batch_size,shuffle=False, num_workers=0) 
+ #train_loader = DataLoader(training_data1, batch_size=Batch_size,shuffle=True, num_workers=4)
+ train_dataset, valid_dataset, test_dataset = torch.utils.data.random_split(training_data1, [train_count, valid_count, test_count])
+ train_loader = DataLoader(train_dataset, batch_size=Batch_size,shuffle=True, num_workers=0) 
+ valid_loader = DataLoader(valid_dataset, batch_size=Batch_size,shuffle=False, num_workers=0) 
+ test_loader = DataLoader(test_dataset, batch_size=Batch_size,shuffle=False, num_workers=0) 
  
- #dataloaders = {'train': train_loader, 'valid': valid_loader, 'test': test_loader}
+ dataloaders = {'train': train_loader, 'valid': valid_loader, 'test': test_loader}
 
  for i_batch, sample_batched in enumerate(train_loader):
  
@@ -349,6 +349,6 @@ def load(training_data1,Batch_size):
         plt.show()
 
         break
- return train_loader
+ return dataloaders
 #load(training_data1)
 
