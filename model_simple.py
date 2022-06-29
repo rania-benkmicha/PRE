@@ -22,7 +22,7 @@ print(f"Using {device} device")
 
 class AlexNet(nn.Module):
 
-    def __init__(self) -> None:
+    def __init__(self,dropout: float = 0.4) -> None:
         super().__init__()
       
         self.features = nn.Sequential(
@@ -50,10 +50,10 @@ class AlexNet(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
         
         self.classifier = nn.Sequential(
-            #nn.Dropout(p=dropout),
+            nn.Dropout(p=dropout),
             nn.Linear(256 * 6 * 6, 4096),
             nn.ReLU(inplace=True),
-            #nn.Dropout(p=dropout),
+            nn.Dropout(p=dropout),
             nn.Linear(4096, 4096),
             nn.ReLU(inplace=True),
             nn.Linear(4096,1),

@@ -26,8 +26,8 @@ print(model)
 
 
 #Defining the model hyper parameters
-num_epochs = 30
-learning_rate = 0.01
+num_epochs =50
+learning_rate = 0.001
 weight_decay = 0.01
 
 criterion = nn.MSELoss(reduction = 'sum')
@@ -97,7 +97,7 @@ for epoch in range(num_epochs):
     with torch.no_grad():
     
     #Iterating over the training dataset in batches
-       for i, samplebatch in enumerate(test_loader):
+       for i, samplebatch in enumerate(valid_loader):
          images=samplebatch['image'] 
          y_true=samplebatch['landmarks']
           
@@ -109,23 +109,30 @@ for epoch in range(num_epochs):
          outputs = model(images)
          loss = criterion(outputs, y_true) 
          test_loss += loss.item()
-       test_loss_list.append(test_loss/len(test_loader)*Batch_size)
-       print(f"testing loss = {test_loss_list[-1]}")  
+       test_loss_list.append(test_loss/len(valid_loader)*Batch_size)
+       print(f" validation loss = {test_loss_list[-1]}")  
        #print(test_loss_list)
      
      
 #Plotting loss for all epochs  
-     
+
+
+#plt.subplot(211)      
 plt.plot(range(1,num_epochs+1), train_loss_list)
 plt.xlabel("Number of epochs")
 plt.ylabel("Training loss")
+
+plt.ylim(-1,1)
 plt.show()
+   
      
-     
-    
+
+#plt.subplot(212)    
 plt.plot(range(1,num_epochs+1), test_loss_list)
 plt.xlabel("Number of epochs")
 plt.ylabel("testing loss")
+
+plt.ylim(-1,1)
 plt.show()    
       
     

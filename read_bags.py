@@ -25,7 +25,7 @@ listOfImageTopics = ['/zed_node/left/image_rect_color']#, '/zed_node/depth/depth
                                                                                             #a modifier
 listOfTopics = ["/imu/data"] #Autres topics qu'on veut sauvegarder
 #a modifier
-downsamplingRatio = 20 #Downsamplig ratio, par exemple s'il vaut 5, une donnee sur 5 sera enregistree
+downsamplingRatio = 5 #Downsamplig ratio, par exemple s'il vaut 5, une donnee sur 5 sera enregistree
 #a modifier
 epsilon = 0.1 # Les differents topics ne publient pas en meme temps. epsilon correspond a l'ecart de temps qu'on s'autorise (seconde)
 #a modifier
@@ -99,6 +99,7 @@ for bagFile in listOfBagFiles: # On fait les calculs/sauvegardes pour chaque ros
     distance=int(input('ecrivez la distance entre capteur et pont capturé'))
     rayon_de_roue=int(input('donnez le rayon de roue'))
     #delta_t=distance/vitesse_angualaire*rayon_de_roue
+    delta_t=float(input("ecrivez le temps"))
     
     
     listTimestampImages = [] # timestamp = nom de l'indicateur de temps pour ros. Utile car ne depend pas du topic, reste le meme d'un topic a l'autre
@@ -167,6 +168,7 @@ for bagFile in listOfBagFiles: # On fait les calculs/sauvegardes pour chaque ros
                             break #si une image correspond a un timestamp on arrête de parcourir le rosbag et on passe aux images du topic principal suivantes. 
                 
     #print(len(listnum))
+    
     for topicName in listOfTopics:
         print(topicName)
         # Create a new CSV file for each topic
@@ -174,14 +176,16 @@ for bagFile in listOfBagFiles: # On fait les calculs/sauvegardes pour chaque ros
         with open(filename, 'w+') as csvfile:
             filewriter = csv.writer(csvfile, delimiter = ',')
             firstIteration = True	#allows header row
-
+            
+# importante ici 
             last_t = t0
             for t_image in listTimestampImages: # on compare chaque instant du topic avec les instants "t_image" ou nous avons sauvegarde une image 
-
+                #print("lats_ttttt",last_t)
+                #print("t imge est ", t_image)
                 for subtopic, msg, t in bag.read_messages(topicName, start_time=last_t):	# for each instant in time that has data for topicName
                     #parse data from this instant, which is of the form of multiple lines of "Name: value\n"
                     #	- put it in the form of a list of 2-element lists
-
+                    #print("lats_t",last_t)
 
    #****pour compter le retatd des données % aux images
    
@@ -191,11 +195,12 @@ for bagFile in listOfBagFiles: # On fait les calculs/sauvegardes pour chaque ros
                     vitesse_angulaire=msgList1[pos+2]
                     msgList1=msgList1[pos+2]
                     splitPair1 = str.split(msgList1, ':')
-                    print(splitPair1)
-                    delta_t=distance/float(splitPair1[1])*rayon_de_roue
-                    print(delta_t)
+                    #print(splitPair1)
+                     #delta_t=distance/float(splitPair1[1])*rayon_de_roue
+                    
+                    #print(delta_t)
 
-                    if rospy.Time.to_sec(t) < t_image + epsilon  and rospy.Time.to_sec(t) > t_image - epsilon: # on sauvegarde uniquement si l'instant est assez proche 
+                    if rospy.Time.to_sec(t) < t_image + epsilon+delta_t  and rospy.Time.to_sec(t) > t_image- epsilon+delta_t: # on sauvegarde uniquement si l'instant est assez proche 
                                                                                                     # des images deja sauvegardees
 
                         # enlever ce "if" et le "break" ligne 186 si on veut les donnees sur la mission entiere  
@@ -208,12 +213,13 @@ for bagFile in listOfBagFiles: # On fait les calculs/sauvegardes pour chaque ros
                         #print(msgList)
                         instantaneousListOfData = []
                         pos=msgList.index('angular_velocity: ')
-                        pos1=msgList.index('linear_acceleration: ')
+                        #pos1=msgList.index('linear_acceleration: ')
                          #je veux les msgs qui concernent  angular velocity
-                        msgList=msgList[pos:pos+4]+msgList[pos1:pos1+2]
+                        #msgList=msgList[pos:pos+4]
+                        msgList=[msgList[pos+2]]
                         
                         
-                        #print(msgList)
+                        print(msgList)
                         for nameValuePair in msgList:
                             splitPair = str.split(nameValuePair, ':')
                             for i in range(len(splitPair)):	#should be 0 to 1
@@ -224,7 +230,7 @@ for bagFile in listOfBagFiles: # On fait les calculs/sauvegardes pour chaque ros
                         
                         #write the first row from the first element of each pair
                         if firstIteration:	# header
-                            headers = ["rosbagTimestamp"]	#first column header
+                            headers = ["image_id"]	#first column header
                             for pair in instantaneousListOfData:
                                 headers.append(pair[0])
                             filewriter.writerow(headers)

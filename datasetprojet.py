@@ -108,6 +108,9 @@ def data_plot(dataproject,cols,rows):
 
 #data_plot(training_data,5,5)
  
+ 
+ 
+ 
 ## transformation des images:
 
 
@@ -166,17 +169,42 @@ class ToTensor(object):
                 'landmarks': landmarks}
 
 
+
+
+
+class RandomCrop(object):
+   
+    def __init__(self, output_size):
+        assert isinstance(output_size, (int, tuple))
+        if isinstance(output_size, int):
+            self.output_size = (output_size, output_size)
+        else:
+            assert len(output_size) == 2
+            self.output_size = output_size
+
+    def __call__(self, sample):
+        image, landmarks = sample['image'], sample['landmarks']
+
+        h, w = image.shape[:2]
+        new_h, new_w = self.output_size
+
+        top = np.random.randint(0, h - new_h)
+        left = np.random.randint(0, w - new_w)
+
+        image = image[top: top + new_h,
+                      left: left + new_w]
+
+        
+
+        return {'image': image, 'landmarks': landmarks}
       
 
 
 
+#######
 
-training_data = DataProject(
-    csv_file='/home/student/ross/Bags_Data_2022-04-14-17-40-50/_imu_data.csv',root_dir='/home/student/ross/Bags_Data_2022-04-14-17-40-50/_zed_node_left_image_rect_color'
 
-)
 
-#data_plot(training_data,5,5)
 
 
 
@@ -186,6 +214,11 @@ training_data = DataProject(
     csv_file='/home/student/ross/Bags_Data_2022-04-14-17-40-50/_imu_data.csv',root_dir='/home/student/ross/Bags_Data_2022-04-14-17-40-50/_zed_node_left_image_rect_color'
 
 )
+  
+  
+print(len(training_data))  
+  #data_plot(training_data,5,5)
+  
   
 def calcul_moy_std(training_data):  
   
@@ -209,16 +242,16 @@ def calcul_moy_std(training_data):
     sumr=sumr+r.sum()
     sumg=sumg+g.sum()
     sumb=sumb+b.sum()
-  print(h,w)
+  #print(h,w)
   
   
-  
+
   meanr=sumr/(h*w*len(training_data))
   meang=sumg/(h*w*len(training_data))
   meanb=sumb/(h*w*len(training_data))
   mean=(meanr,meang,meanb)
-  print('mean')
-  print(meanr,meang,meanb)
+  #print('mean')
+  #print(meanr,meang,meanb)
   for i in data['image']:
     m=i.numpy()
     r=m[:,:,0] 
@@ -233,6 +266,8 @@ def calcul_moy_std(training_data):
   std=(stddr,stddg,stddb)
 
   return(mean,std)
+
+
 
 
 class Normalize(object):
@@ -256,14 +291,16 @@ class Normalize(object):
 
 
 t=calcul_moy_std(training_data)
-#print('le coue',t)
+print('le coue',t)
 
 data_transforms = transforms.Compose([
-    Normalize(t[0],t[1]),
-    # Apply histogram equalization
-    Rescale(255),
     
-    ToTensor()
+    #Normalize(t[0],t[1]),
+    # Apply histogram equalization
+    Rescale(280),
+    RandomCrop(225),
+    ToTensor(),
+    
     
     
      # Add channel dimension to be able to apply convolutions
@@ -327,9 +364,9 @@ def load(training_data1,Batch_size):
  test_count=L-valid_count-train_count
  #train_loader = DataLoader(training_data1, batch_size=Batch_size,shuffle=True, num_workers=4)
  train_dataset, valid_dataset, test_dataset = torch.utils.data.random_split(training_data1, [train_count, valid_count, test_count])
- train_loader = DataLoader(train_dataset, batch_size=Batch_size,shuffle=True, num_workers=0) 
- valid_loader = DataLoader(valid_dataset, batch_size=Batch_size,shuffle=False, num_workers=0) 
- test_loader = DataLoader(test_dataset, batch_size=Batch_size,shuffle=False, num_workers=0) 
+ train_loader = DataLoader(train_dataset, batch_size=Batch_size,shuffle=True, num_workers=4) 
+ valid_loader = DataLoader(valid_dataset, batch_size=Batch_size,shuffle=True, num_workers=4) 
+ test_loader = DataLoader(test_dataset, batch_size=Batch_size,shuffle=False, num_workers=4) 
  
  dataloaders = {'train': train_loader, 'valid': valid_loader, 'test': test_loader}
 
