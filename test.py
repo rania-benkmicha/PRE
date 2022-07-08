@@ -48,7 +48,7 @@ class DataProject(Dataset):
 #hne 5ater ye5dedh dict
 
         if self.transform:
-            sample['image']= self.transform(sample['image'])
+            sample = self.transform(sample)
         
         
 
@@ -106,7 +106,7 @@ def data_plot(dataproject,cols,rows):
  
  #loading data
 
-#data_plot(training_data,5,5)
+
  
  
  
@@ -129,8 +129,8 @@ class Rescale(object):
             assert len(output_size) == 2
             self.output_size = output_size
 
-    def __call__(self, image):
-        #image, landmarks = sample['image'], sample['landmarks']
+    def __call__(self, sample):
+        image, landmarks = sample['image'], sample['landmarks']
 
         h, w = image.shape[:2]
         #if isinstance(self.output_size, int):
@@ -149,8 +149,7 @@ class Rescale(object):
         # x and y axes are axis 1 and 0 respectively
         #landmarks = landmarks * [new_w / w, new_h / h]
 
-        #return {'image': img, 'landmarks': landmarks}
-        return img
+        return {'image': img, 'landmarks': landmarks}
 
 
 
@@ -158,8 +157,8 @@ class Rescale(object):
 class ToTensor(object):
     
 
-    def __call__(self, image):
-        #image, landmarks = sample['image'], sample['landmarks']
+    def __call__(self, sample):
+        image, landmarks = sample['image'], sample['landmarks']
 
         # swap color axis because
         # numpy image: H x W x C
@@ -167,10 +166,10 @@ class ToTensor(object):
         image = image.transpose((2, 0, 1))
         ######(a voir si'il y aura un problème)
         imagee=torch.from_numpy(image)
-        imageee=torch.Tensor.float(imagee)
-        #return {'image': imageee,
-                #'landmarks': landmarks}
-        return imagee
+        #imageee=torch.Tensor.float(imagee)
+        return {'image': imagee,
+                'landmarks': landmarks}
+
 
 
 
@@ -185,26 +184,28 @@ class RandomCrop(object):
             assert len(output_size) == 2
             self.output_size = output_size
 
-    def __call__(self, image):
-        #image, landmarks = sample['image'], sample['landmarks']
+    def __call__(self, sample):
+        image, landmarks = sample['image'], sample['landmarks']
 
         h, w = image.shape[:2]
         new_h, new_w = self.output_size
 
         top = np.random.randint(0, h - new_h)
-        #left = np.random.randint(0, w/2 - new_w/2)
+        left = np.random.randint(0, w - new_w)
 
-        #image = image[top: top + new_h,
-                      #left: left + new_w]
+        image = image[top: top + new_h,
+                      left: left + new_w]
 
-        image=image[top:top+new_h,int(w/2)-int(new_w/2):int(w/2)+int(new_w/2)]
+        
 
-        #return {'image': image, 'landmarks': landmarks}
-        return image
+        return {'image': image, 'landmarks': landmarks}
+      
 
 
 
 #######
+
+
 
 
 
@@ -223,19 +224,16 @@ data_transforms = transforms.Compose([
 ])
 
 
-
 #normalize images for regression problems
 
 training_data = DataProject(
-    csv_file='/home/student/ross/Bags_Data_rania_2022-07-01-11-40-52/_imu_data.csv',root_dir='/home/student/ross/Bags_Data_rania_2022-07-01-11-40-52/_zed_node_rgb_image_rect_color',transform=data_transforms
-
-)
+    csv_file='/home/student/ross/Bags_Data_rania_2022-07-01-11-40-52/_imu_data.csv',root_dir='/home/student/ross/Bags_Data_rania_2022-07-01-11-40-52/_zed_node_rgb_image_rect_color',transform=data_transforms)
   
   
-print(len(training_data))  
+#print(len(training_data))  
   #data_plot(training_data,5,5)
-  
-  
+#for i in range(len(training_data)):
+  #print(training_data[i]['image'])
 def calcul_moy_std(training_data):  
   
   sumr=0
@@ -312,116 +310,11 @@ class Normalize(object):
 
 imgs = torch.stack( [training_data[i]['image'] for i in range(len( training_data))], dim=3)
 #print(len(imgs))
-#print(imgs[0])
+print(imgs[0])
 print('ici',imgs.shape)
-mean=tuple(torch.Tensor.float(imgs.view(3, -1)).mean(dim=1).tolist())
-ecart=tuple(torch.Tensor.float(imgs.view(3, -1)).std(dim=1).tolist())
-print(mean,ecart)
-t=(mean,ecart)
-
-data_transforms1 = transforms.Compose([
-    
-   
-    # Apply histogram equalization
-    Rescale(280),
-    RandomCrop(225),
-    ToTensor(),
-    #transforms.Normalize(t[0],t[1]),
-    
-    
-     # Add channel dimension to be able to apply convolutions
-    
-])
-
-
-
-training_data1 = DataProject(
-    csv_file='/home/student/ross/Bags_Data_rania_2022-07-01-11-40-52/_imu_data.csv',root_dir='/home/student/ross/Bags_Data_rania_2022-07-01-11-40-52/_zed_node_rgb_image_rect_color',transform=data_transforms1
-)
-
-
-
-
-    
-
-
-
-
-# loading data in an iterator dataloader
-#shuffle= True pour le choix aleatoire
-
-
-#visualizing a batch
-
-def show_landmarks_batch(sample_batched):
-    
-    images_batch, landmarks_batch = \
-            sample_batched['image'], sample_batched['landmarks']
-    batch_size = len(images_batch)
-    im_size = images_batch.size(2)
-    grid_border_size = 2
-
-    grid = utils.make_grid(images_batch)
-    plt.imshow(grid.numpy().transpose((1, 2, 0)))#from tensor to ndarray
-
-    #for i in range(batch_size):
-        
-        
-        #plt.title('Batch from dataloader')
-
-
-
-
-
-
-def load(training_data1,Batch_size):
- L=len(training_data1)
- 
-#un choix
-
-
- train_count = int(0.8 * L) 
-
- valid_count = int(0.1 * L)
- 
- test_count=L-valid_count-train_count
- #train_loader = DataLoader(training_data1, batch_size=Batch_size,shuffle=True, num_workers=4)
- train_dataset, valid_dataset, test_dataset = torch.utils.data.random_split(training_data1, [train_count, valid_count, test_count])
- train_loader = DataLoader(train_dataset, batch_size=Batch_size,shuffle=True, num_workers=4) 
- valid_loader = DataLoader(valid_dataset, batch_size=Batch_size,shuffle=True, num_workers=4) 
- test_loader = DataLoader(test_dataset, batch_size=Batch_size,shuffle=False, num_workers=4) 
- 
- dataloaders = {'train': train_loader, 'valid': valid_loader, 'test': test_loader}
-
- for i_batch, sample_batched in enumerate(train_loader):
- 
-    #print(i_batch, sample_batched['image'].size(),
-          #sample_batched['landmarks'].size())
-
-    
-    if i_batch == 3:
-        plt.figure(1)
-        show_landmarks_batch(sample_batched)
-        #print(sample_batched ['image'])
-        
-        print('hh',sample_batched ['image'][1].size())
-        
-        
-        plt.title((sample_batched['landmarks']).tolist())
-        plt.axis('off')
-        plt.ioff()
-        plt.show()
-        plt.figure(2)
-        grid = utils.make_grid(sample_batched ['image'][0])
-        k=grid.numpy().transpose((1, 2, 0))
-        #k=np.array(sample_batched ['image'][0]).transpose((1, 2, 0)
-        print(k.shape)
-        plt.hist(k.ravel(), bins=50, density=True)
-        plt.xlabel("pixel values")
-        plt.ylabel("relative frequency")
-        plt.title("distribution of pixels") 
-        #plt.show()
-        break
- return dataloaders
-###load(training_data1,8)
-
+print('mean',torch.Tensor.float(imgs.view(3, -1)).mean(dim=1))
+print('ecart',torch.Tensor.float(imgs.view(3, -1)).std(dim=1))
+norm=transforms.Normalize((0.3847, 0.4361, 0.3709),(0.2556, 0.2597, 0.2511))
+t=training_data[1]['image']
+out = norm(t)
+print(out.mean(), out.std())

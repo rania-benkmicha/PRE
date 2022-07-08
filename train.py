@@ -15,11 +15,12 @@ import datasetprojet as d
 
 
 Batch_size=8
+
 dataloaders=d.load(d.training_data1,Batch_size)
 train_loader=dataloaders['train']
 valid_loader=dataloaders['valid']
 test_loader=dataloaders['test']
-
+print(len(train_loader)*8)
          
 model = m.AlexNet ().to(m.device)
 print(model)
@@ -27,12 +28,12 @@ print(model)
 
 #Defining the model hyper parameters
 num_epochs =50
-learning_rate = 0.001
-weight_decay = 0.01
+learning_rate = 0.0001
+weight_decay =  0.001  
 
 criterion = nn.MSELoss(reduction = 'sum')
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-
+#optimizer=torch.optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay,momentum=0.9)
 
 
 
@@ -91,7 +92,7 @@ for epoch in range(num_epochs):
 
 
 
-
+    test_acc=0
     model.eval()
     
     with torch.no_grad():
@@ -107,32 +108,36 @@ for epoch in range(num_epochs):
           
         #Calculating outputs for the batch being iterated
          outputs = model(images)
+         _, y_pred = torch.max(outputs.data, 1)
          loss = criterion(outputs, y_true) 
          test_loss += loss.item()
-       test_loss_list.append(test_loss/len(valid_loader)*Batch_size)
+         
+      
+      
+       test_loss_list.append(test_loss/(len(valid_loader)*Batch_size))
        print(f" validation loss = {test_loss_list[-1]}")  
        #print(test_loss_list)
-     
+       
      
 #Plotting loss for all epochs  
 
-
+plt.figure(3)
 #plt.subplot(211)      
-plt.plot(range(1,num_epochs+1), train_loss_list)
+plt.plot(range(1,num_epochs+1), train_loss_list,'r')
 plt.xlabel("Number of epochs")
 plt.ylabel("Training loss")
 
-plt.ylim(-1,1)
-plt.show()
+#plt.ylim(-1,1)
+#plt.show()
    
      
 
 #plt.subplot(212)    
-plt.plot(range(1,num_epochs+1), test_loss_list)
+plt.plot(range(1,num_epochs+1), test_loss_list,'b')
 plt.xlabel("Number of epochs")
 plt.ylabel("testing loss")
 
-plt.ylim(-1,1)
+#plt.ylim(0,0.5)
 plt.show()    
       
     

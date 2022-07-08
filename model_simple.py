@@ -22,7 +22,7 @@ print(f"Using {device} device")
 
 class AlexNet(nn.Module):
 
-    def __init__(self,dropout: float = 0.4) -> None:
+    def __init__(self,dropout: float = 0.5) -> None:
         super().__init__()
       
         self.features = nn.Sequential(
@@ -50,13 +50,26 @@ class AlexNet(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
         
         self.classifier = nn.Sequential(
-            nn.Dropout(p=dropout),
-            nn.Linear(256 * 6 * 6, 4096),
-            nn.ReLU(inplace=True),
-            nn.Dropout(p=dropout),
-            nn.Linear(4096, 4096),
-            nn.ReLU(inplace=True),
-            nn.Linear(4096,1),
+            #nn.Dropout(p=dropout),
+            nn.Linear(256 * 6 * 6, 1028),
+            #nn.BatchNorm1d(1028),
+            nn.LeakyReLU(inplace=True),
+            #nn.Dropout(p=dropout),
+            nn.Linear(1028, 128),
+            #nn.BatchNorm1d(128),
+            nn.LeakyReLU(inplace=True),
+            nn.Linear(128,32),
+            nn.BatchNorm1d(32),
+            
+            #m = nn.LeakyReLU(0.1)
+            
+            nn.LeakyReLU(inplace=True),
+            #nn.Dropout(p=dropout),
+            
+            
+            nn.Linear(32,1),
+            
+           
         )
 
 
@@ -64,7 +77,7 @@ class AlexNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.features(x)
        
-        x = self.avgpool(x)
+        #x = self.avgpool(x)
         #print(x.shape)
         x = torch.flatten(x, 1)#same as x.view
         #print(x.shape)
