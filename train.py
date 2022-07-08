@@ -29,7 +29,7 @@ print(model)
 #Defining the model hyper parameters
 num_epochs =50
 learning_rate = 0.0001
-weight_decay =  0.001  
+weight_decay =  0.01  
 
 criterion = nn.MSELoss(reduction = 'sum')
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
