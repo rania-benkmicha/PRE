@@ -27,20 +27,20 @@ def main(arg,num_epochs =50):
    valid_loader=dataloaders['valid']
    test_loader=dataloaders['test']
    print(len(train_loader)*8)
-         
+   #model=m.ResNet50(num_classes=1).to(m.device)      
    model = m.AlexNet ().to(m.device)
    print(model)
 
 
 #Defining the model hyper parameters
    
-   learning_rate = 0.0001
-   weight_decay =  0.01
+   #learning_rate = 0.0001
+   #weight_decay =  0.01
  
 
    criterion = nn.MSELoss(reduction = 'sum')
    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-#optimizer=torch.optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay,momentum=0.9)
+   #optimizer=torch.optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
 
 
@@ -151,7 +151,10 @@ def main(arg,num_epochs =50):
    plt.ylabel("Validation  loss")
 
    #plt.ylim(0,0.5)
-   plt.show()    
+   #plt.show()   
+   
+   plt.savefig('plot.png') 
+   #plt.close()
 
 
 
@@ -184,8 +187,8 @@ def main(arg,num_epochs =50):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Train a line detector')
   parser.add_argument('--batchsize', help='Batch size', default= 8, type=int)
-  parser.add_argument('-lr', '--learning_rate', help='Learning rate', default=0.0001, type=float)
-  parser.add_argument('-wd', '--weight_decay', help='Weight_decay', default=0.001, type=float) 
+  parser.add_argument('-lr', '--learning_rate', help='Learning rate', default=0.0001, type=float)#same here
+  parser.add_argument('-wd', '--weight_decay', help='Weight_decay', default=0.001, type=float) #i need them just for training after finding the best paramaters by hyperband algorithm
   parser.add_argument('--hyp', help='Test hyperparameters', default=0, type=int)
   parser.add_argument('--num_epochs', help='Number of epoch', default= 50, type=int)
   args = parser.parse_args()
@@ -202,7 +205,7 @@ if __name__ == '__main__':
   
   elif (args.hyp==1):
     hyp=Hyperband(args,get_params,main)
-    hyp.run(skip_last = 1, dry_run = False, hb_result_file = "/home/student/ross/hb_result.json", hb_best_result_file = "/home/student/ross/hb_best_result.json" )
+    hyp.run( dry_run = False, hb_result_file = "/home/student/ross/hb_result.json", hb_best_result_file = "/home/student/ross/hb_best_result.json" )
      
   
 #car on a argument test dont on n'a pas besoin
