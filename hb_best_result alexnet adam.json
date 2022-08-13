@@ -1,0 +1,1 @@
+{"best train loss": 0.5795546126091617, "best_val_loss": 0.13784679875398675, "counter": 48, "seconds": 22, "params": {"learning_rate": 0.0006932146016426629, "weight_decay": 0.0012551834155717756, "batchsize": 8}, "iterations": 1}
