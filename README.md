@@ -8,11 +8,17 @@ La base de données sur laquelle nous avons travaillé se trouve au lien dans le
 Explication des fichiers:
 
 train_test.py:c'est le fichier qui est responsable de l'entrainement et de test de modèle.
+
 get.py:c'est le fichier qui permet de préparer les configurations de modèle.
+
 hyperband.py:Il s'agit d'une implémentation de l'algorithme d'optimisation des hyper-paramètres "hyperband".
+
 modele_simple.py:c'est le fichier qui contient l'implémentation des structures de réseaux de neurones.
+
 datasetprojet.py:c'est le fichier responsable de chargement et  traitement de la base de données.
+
 read_bags0.py:c'est le script ROS qui permet de générer la base de données du robot.
+
 imu_data.csv:c'est la base de donnée réelle.
 imu.csv:c'est la base de données sur lasuelle nous travaillons.
 rosbag_record_topic_list_rania.txt :c'est la liste de topics utilisés pour extraire les informations de robot.
