@@ -28,7 +28,7 @@ rosbag_record_topic_list_rania.txt :c'est la liste de topics utilisés pour extr
 
 
 
-# Pour executer le code , il suffit de taper la ligne de code suivante:
+# Pour exécuter le code , il suffit de taper la ligne de code suivante:
 
 python train_test.py --batchsize 8 --learning_rate 0.001 --weight_decay 0.002 --hyp 0 --modelnetwork AlexNet
 tel que:
