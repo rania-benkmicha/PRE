@@ -2,7 +2,7 @@
 
 Il d'agit d'un projet de recherche qui traite le sujet d'apprentissage auto-supervisé d'un robot réel.
 
-La base de données sur laquelle nous avons travaillé se trouve au lien dans le rapport.
+La base de données sur laquelle nous avons travaillé se trouve au lien dans le rapport.https://drive.google.com/drive/folders/1aEfvWY1DxogPogli_FlXV0OhHR5cS7g-?usp=sharing
 
 
 
