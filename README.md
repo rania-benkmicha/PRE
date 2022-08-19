@@ -39,18 +39,12 @@ Start by creating the dataset from the bag files:
 Then start training:
 
 `python train_test.py --batchsize 8 --learning_rate 0.001 --weight_decay 0.002 --hyp 0 --modelnetwork AlexNet`
-tel que:
 
-batchsize: c'est la taille de l'échantillon.
+where:
 
-learning rate: c'est le pas de l'algorithme d'optimisation.
+- `weight decay` is the weight of L2 regularization.
 
-weight decay: c'est le paramètre de pénalité pour la régularisation L2.
+- `hyp` S'il est égal 0 signifie qu'on est en train de vérifier le modèle avec nos choix de paramètres. S'il est égale à 1 ,cela signifie q'on lance l'algorithme d'optimisation de paramètres "hyperband".
 
-hyp: S'il est égal 0 signifie qu'on est en train de vérifier le modèle avec nos choix de paramètres.S'il est égale à 1 ,cela signifie q'on lance l'algorithme d'optimisation de paramètres "hyperband".
-
-modelnetwork: il repésente la nature de modèle, nous avons le choix entre "AlexNet" et "ResNet".
-
-
-
+- `modelnetwork` can be "AlexNet" or "ResNet".
 
