@@ -1,12 +1,12 @@
 # PRE
 
-Il d'agit d'un projet de recherche qui traite le sujet d'apprentissage auto-supervisé d'un robot réel.
-
-La base de données sur laquelle nous avons travaillé se trouve au lien dans le rapport.https://drive.google.com/drive/folders/1aEfvWY1DxogPogli_FlXV0OhHR5cS7g-?usp=sharing
+This project is about learning to estimate terrain traversability from vision for a mobile robot using a self-supervised approach.
 
 
+# Code overview
 
-# Explication des fichiers:
+- `bagfiles/` contains the raw data as bagfiles. A sample file is included, the full dataset (`rania_2022-07-01-11-40-52.bag`) is available at https://drive.google.com/drive/folders/1aEfvWY1DxogPogli_FlXV0OhHR5cS7g-?usp=sharing. `filter_bag.sh` contains the command used to extract the sample bag from the full data.
+
 
 train_test.py: c'est le fichier qui est responsable de l'entrainement et de test de modèle.
 
