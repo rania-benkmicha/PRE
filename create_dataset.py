@@ -63,11 +63,11 @@ for bagFile in listOfBagFiles: # On fait les calculs/sauvegardes pour chaque ros
     #acces au rosbag
     bag = rosbag.Bag(bagFile)
     bagContents = bag.read_messages()
-    bagName = bag.filename
+    bagName = os.path.basename(bag.filename)
     #cree un nouveau dossier
     directory = os.path.abspath(os.getcwd())
-    results_dir = directory + "/Bags_Data_" + bagName[:-4]
-    try:	#on cree le nouveau dossier suelement s'il n'existe pas deja 
+    results_dir = directory + "/datasets/dataset_" + bagName[:-4]
+    try:	#on cree le nouveau dossier seulement s'il n'existe pas deja 
         os.mkdir(results_dir)
         print(results_dir + " folder created")
     except:
@@ -107,7 +107,7 @@ for bagFile in listOfBagFiles: # On fait les calculs/sauvegardes pour chaque ros
             exit()
 
 
-    delta_d=float(input('ecrivez la distance entre capteur et pont capturé'))
+    delta_d=float(input('ecrivez la distance entre capteur et point capturé'))
 
     
     
@@ -154,11 +154,10 @@ for bagFile in listOfBagFiles: # On fait les calculs/sauvegardes pour chaque ros
                        
                         im = im.convert('RGB')
                         
-                        im.save(topicDir + "/" + str(num) + ".png", "PNG")
-                        #im.save(topicDir + "/" + str(t) + ".png", "PNG")
+                        im.save(topicDir + "/" + "{:05d}".format(num) + ".png", "PNG")
                         
                         listTimestampImages.append(rospy.Time.to_sec(t)) # on remplit la liste avec les instants qu'on veut sauvegarder
-                        listnum.append(str(num))
+                        listnum.append("{:05d}".format(num))
                         filewriter.writerow([str(t)])
                     count_i+=1
                     num=num+1
@@ -177,7 +176,7 @@ for bagFile in listOfBagFiles: # On fait les calculs/sauvegardes pour chaque ros
                             #pour controler le nom de l'image
                             #ch=topicDir + "/" + str(t) + ".png"
                             #plt.savefig(ch)
-                            im.save(topicDir + "/" + str(t) + ".png", "PNG")
+                            im.save(topicDir + "/" + "{:05d}".format(t) + ".png", "PNG")
                             
                             
                             filewriter.writerow([str(t)])
@@ -349,8 +348,9 @@ for bagFile in listOfBagFiles: # On fait les calculs/sauvegardes pour chaque ros
                             firstIteration = False
                         # write the value from each pair to the file
                         #values = [str(t)]
+                        
                         values = [listnum[listTimestampImages.index(t_image)]+'.png']
-                        #print(values)	#first column will have rosbag timestamp
+                        
                         for pair in instantaneousListOfData:
                         
                             if len(pair) > 1 :
@@ -375,9 +375,10 @@ print("Le traitement des donnees a dure " + str(round(fin - debut, 1)) + " s.")
 
 
 
+### Ugly hack to compute absolute value and mean of neighboring values.
+### Should be integrated directly in the script above...
 
-### calculer la moyenne des valeurs absolues des vitesses angulaires des voisins
-df_train = pd.read_csv('/home/student/ross/Bags_Data_rania_2022-07-01-11-40-52/_imu_data.csv')
+df_train = pd.read_csv(results_dir + '/_imu_data.csv')
 df_train
 print(df_train.iloc[:,[1]])
 tab=np.array(df_train.iloc[:,[1]])
@@ -392,5 +393,5 @@ print(tab)
 #print(tab[940])
 df_train['y']=tab
 df_train
-df_train.to_csv("imu.csv", index=False)
+df_train.to_csv(results_dir + '/imu.csv', index=False)
 

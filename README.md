@@ -5,8 +5,14 @@ This project is about learning to estimate terrain traversability from vision fo
 
 # Code overview
 
-- `bagfiles/` contains the raw data as bagfiles. A sample file is included, the full dataset (`rania_2022-07-01-11-40-52.bag`) is available at https://drive.google.com/drive/folders/1aEfvWY1DxogPogli_FlXV0OhHR5cS7g-?usp=sharing. `filter_bag.sh` contains the command used to extract the sample bag from the full data.
+- `bagfiles/` contains the raw data as bagfiles and some helper scripts.
+  - `filter_bag.sh` contains the command used to extract the sample bag from the full data.
+  - `sample_bag.bag` is a short sample file, the full dataset (`rania_2022-07-01-11-40-52.bag`) is available at https://drive.google.com/drive/folders/1aEfvWY1DxogPogli_FlXV0OhHR5cS7g-?usp=sharing. 
+  - `rosbag_record_topic_list.txt` is the list of topics that should be recorded on the robot. 
 
+- `datasets/` contains the dataset created from bagfiles processing
+
+- `create_dataset.py` will process a bag file to create a self-supervised dataset
 
 train_test.py: c'est le fichier qui est responsable de l'entrainement et de test de modèle.
 
@@ -18,17 +24,21 @@ modele_simple.py: c'est le fichier qui contient l'implémentation des structures
 
 datasetprojet.py: c'est le fichier responsable de chargement et  traitement de la base de données.
 
-read_bags0.py: c'est le script ROS qui permet de générer la base de données du robot.
-
 imu.csv: c'est la base de données sur laquelle nous travaillons.
 
 rosbag_record_topic_list_rania.txt: c'est la liste de topics utilisés pour extraire les informations de robot.
 
 
 
-# Pour exécuter le code , il suffit de taper la ligne de code suivante:
+# Code usage
 
-python train_test.py --batchsize 8 --learning_rate 0.001 --weight_decay 0.002 --hyp 0 --modelnetwork AlexNet
+Start by creating the dataset from the bag files:
+
+`python create_dataset.py bagfiles/sample_bag.bag`
+
+Then start training:
+
+`python train_test.py --batchsize 8 --learning_rate 0.001 --weight_decay 0.002 --hyp 0 --modelnetwork AlexNet`
 tel que:
 
 batchsize: c'est la taille de l'échantillon.
