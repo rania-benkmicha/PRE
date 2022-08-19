@@ -25,11 +25,15 @@ def main(arg,num_epochs =10):
            # 0.0001
    weight_decay = args.weight_decay
 
+
+   print("Creating Dataloaders...")
    dataloaders=d.load(d.training_data1,Batch_size)
    train_loader=dataloaders['train']
    valid_loader=dataloaders['valid']
    test_loader=dataloaders['test']
    print(len(train_loader)*8)
+   
+   
    if modelnetwork=="AlexNet":
      model = m.AlexNet ().to(m.device)
    else :

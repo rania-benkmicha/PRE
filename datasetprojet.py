@@ -227,7 +227,7 @@ data_transforms = transforms.Compose([
 #normalize images for regression problems
 
 training_data = DataProject(
-    csv_file='/content/drive/MyDrive/Bags_Data_rania_2022-07-01-11-40-52/imu.csv',root_dir='/content/drive/MyDrive/Bags_Data_rania_2022-07-01-11-40-52/_zed_node_rgb_image_rect_color',transform=data_transforms
+    csv_file='datasets/dataset_sample_bag/imu.csv',root_dir='datasets/dataset_sample_bag/_zed_node_rgb_image_rect_color',transform=data_transforms
 
 )
   
@@ -336,7 +336,7 @@ data_transforms1 = transforms.Compose([
 
 
 training_data1 = DataProject(
-    csv_file='/content/drive/MyDrive/Bags_Data_rania_2022-07-01-11-40-52/imu.csv',root_dir='/content/drive/MyDrive/Bags_Data_rania_2022-07-01-11-40-52/_zed_node_rgb_image_rect_color',transform=data_transforms1
+    csv_file='datasets/dataset_sample_bag/imu.csv',root_dir='datasets/dataset_sample_bag/_zed_node_rgb_image_rect_color',transform=data_transforms1
 )
 
 
