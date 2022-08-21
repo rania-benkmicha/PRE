@@ -19,21 +19,26 @@ from skimage import color, io
 debut = time.time()
 
 # Variables
-# , '/zed_node/depth/depth_registered'] # Liste des topics avec images qu'on veut sauvegarder
-listOfImageTopics = ['/zed_node/rgb/image_rect_color']
+# Liste des topics avec images qu'on veut sauvegarder
+listOfImageTopics = ['/zed_node/rgb/image_rect_color'] # , '/zed_node/depth/depth_registered']
 # /!\ a mettre dand l'ordre des priorites si un topic
 # est plus important que l'autre. Mettre en premier le topic principal
-# a modifier
+
 # Autres topics qu'on veut sauvegarder
 listOfTopics = ["/imu/data", "/odometry/filtered"]
-# a modifier
+
 # Downsamplig ratio, par exemple s'il vaut 5, une donnee sur 5 sera enregistree
 DOWNSAMPLING_RATIO = 2
-# a modifier
-# Les differents topics ne publient pas en meme temps. epsilon correspond a l'ecart de temps qu'on s'autorise (seconde)
-EPSILON = 0.1
-# a modifier
-EPSILON1 = 0.3
+
+# Les differents topics ne publient pas en meme temps.
+# EPSILON_T correspond a l'ecart de temps qu'on s'autorise (seconde)
+EPSILON_T = 0.1
+
+# Distance between robot position dans point seen at the center of the camera
+DELTA_D = 1
+
+# Threshold for matching distance
+EPSILON_D = 0.3
 
 # Verifie les arguments du script. On peut soit appeler le script en tapant "python read_bags.py" soit "python read_bags.py nom_du_rosbag.bag"
 if len(sys.argv) > 2:
@@ -103,8 +108,6 @@ for bagFile in listOfBagFiles:  # On fait les calculs/sauvegardes pour chaque ro
         if answer == "No":
             exit()
 
-    delta_d = float(
-        input('ecrivez la distance entre capteur et point capturé'))
 
 
 #########
@@ -165,7 +168,7 @@ for bagFile in listOfBagFiles:  # On fait les calculs/sauvegardes pour chaque ro
                 for t_image in listTimestampImages:
                     for topic, msg, t in bag.read_messages(topics=listOfImageTopics[i], start_time=last_t):
                         # on sauvegarde uniquement si l'instant est assez proche
-                        if rospy.Time.to_sec(t) < t_image + EPSILON:
+                        if rospy.Time.to_sec(t) < t_image + EPSILON_T:
                             # des images deja sauvegardees
                             cv_img = bridge.imgmsg_to_cv2(
                                 msg, desired_encoding="rgb8")
@@ -195,7 +198,7 @@ for bagFile in listOfBagFiles:  # On fait les calculs/sauvegardes pour chaque ro
         comp = comp+1
         print('compteur', comp)
         for subtopic, msg, t in bag.read_messages(listOfTopics[indice], start_time=last_t):
-            if rospy.Time.to_sec(t) < t_image + EPSILON and rospy.Time.to_sec(t) > t_image - EPSILON:
+            if rospy.Time.to_sec(t) < t_image + EPSILON_T and rospy.Time.to_sec(t) > t_image - EPSILON_T:
 
                 last_t = t
                # decomposer x initial
@@ -241,7 +244,7 @@ for bagFile in listOfBagFiles:  # On fait les calculs/sauvegardes pour chaque ro
                     for Pair in instantaneousListOfData1:
                         x = Pair[1]
                         # print('x',x)
-                    if abs(float(x)-float(x0)) > delta_d-EPSILON1 and abs(float(x)-float(x0)) < delta_d+EPSILON1:
+                    if abs(float(x)-float(x0)) > DELTA_D-EPSILON_D and abs(float(x)-float(x0)) < DELTA_D+EPSILON_D:
                         delta_t = rospy.Time.to_sec(t1)-rospy.Time.to_sec(t)
                         # delta_t=rospy.Time.to_sec(delta_t)
                         listof_delta_t.append(delta_t)
@@ -294,7 +297,7 @@ for bagFile in listOfBagFiles:  # On fait les calculs/sauvegardes pour chaque ro
                         # print(delta_t)
 
                         # on sauvegarde uniquement si l'instant est assez proche
-                        if rospy.Time.to_sec(t) < t_image + EPSILON+listof_delta_t[i] and rospy.Time.to_sec(t) > t_image - EPSILON+listof_delta_t[i]:
+                        if rospy.Time.to_sec(t) < t_image + EPSILON_T+listof_delta_t[i] and rospy.Time.to_sec(t) > t_image - EPSILON_T+listof_delta_t[i]:
                             # des images deja sauvegardees
 
                             # enlever ce "if" et le "break" ligne 186 si on veut les donnees sur la mission entiere

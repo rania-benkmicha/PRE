@@ -14,29 +14,23 @@ This project is about learning to estimate terrain traversability from vision fo
 
 - `create_dataset.py` will process a bag file to create a self-supervised dataset
 
-train_test.py: c'est le fichier qui est responsable de l'entrainement et de test de modèle.
+- `train_test.py` will lanch training and test of the model
 
-get.py: c'est le fichier qui permet de préparer les configurations de modèle.
+- `get.py` generates random hyperparameters configurations
 
-hyperband.py: Il s'agit d'une implémentation de l'algorithme d'optimisation des hyper-paramètres "hyperband".
+- `hyperband.py` will optimize hyper-parameters
 
-modele_simple.py: c'est le fichier qui contient l'implémentation des structures de réseaux de neurones.
+- `modele_simple.py` contains the description of the neural networks
 
-datasetprojet.py: c'est le fichier responsable de chargement et  traitement de la base de données.
-
-imu.csv: c'est la base de données sur laquelle nous travaillons.
-
-rosbag_record_topic_list_rania.txt: c'est la liste de topics utilisés pour extraire les informations de robot.
-
-
+- `datasetprojet.py` defines dataloaders and data augmentation
 
 # Code usage
 
-Start by creating the dataset from the bag files:
+Start by creating the dataset from the bag files, e.g.:
 
 `python create_dataset.py bagfiles/sample_bag.bag`
 
-Then start training:
+Then start training, e.g.:
 
 `python train_test.py --batchsize 8 --learning_rate 0.001 --weight_decay 0.002 --hyp 0 --modelnetwork AlexNet`
 
