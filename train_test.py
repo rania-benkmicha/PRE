@@ -14,7 +14,7 @@ from hyperband import Hyperband
 
 def main(arg, num_epochs=10):
 
-    Batch_size = args.batchsize  # 8 par défaut
+    batch_size = args.batchsize  # 8 par défaut
     learning_rate = args.learning_rate
     modelnetwork = args.modelnetwork
 
@@ -22,11 +22,11 @@ def main(arg, num_epochs=10):
     weight_decay = args.weight_decay
 
     print("Creating Dataloaders...")
-    dataloaders = d.load(d.training_data1, Batch_size)
+    dataloaders = d.load(d.training_data1, batch_size)
     train_loader = dataloaders['train']
     valid_loader = dataloaders['valid']
     test_loader = dataloaders['test']
-    print(len(train_loader)*8)
+    print("%d images loaded in %d batches" % (len(train_loader)*batch_size,len(train_loader)))
 
     if modelnetwork == "AlexNet":
         model = m.AlexNet().to(m.device)
@@ -81,7 +81,7 @@ def main(arg, num_epochs=10):
             train_loss += loss.item()
 
        # Printing loss for each epoch
-        train_loss_list.append(train_loss/(len(train_loader)*Batch_size))
+        train_loss_list.append(train_loss/(len(train_loader)*batch_size))
         print(f"Training loss = {train_loss_list[-1]}")
 
        #print( train_loss_list)
@@ -110,7 +110,7 @@ def main(arg, num_epochs=10):
                 valid_loss += loss.item()
 
             validation_loss_list.append(
-                valid_loss/(len(valid_loader)*Batch_size))
+                valid_loss/(len(valid_loader)*batch_size))
             print(f" validation loss = {validation_loss_list[-1]}")
     best_training_loss = min(train_loss_list)
     best_validation_loss = min(validation_loss_list)
@@ -180,7 +180,7 @@ def main(arg, num_epochs=10):
             plt.savefig("test_images.png")
             plt.close()
             ####
-        test_error_final = test_loss_final/(len(test_loader)*Batch_size)
+        test_error_final = test_loss_final/(len(test_loader)*batch_size)
         print(f" testing loss = {test_error_final}")
         # print(test_loss_list)
 
@@ -216,8 +216,8 @@ if __name__ == '__main__':
 
     elif (args.hyp == 1):
         hyp = Hyperband(args, get_params, main)
-        hyp.run(dry_run=False, hb_result_file="/home/student/ross/hb_result.json",
-                hb_best_result_file="/home/student/ross/hb_best_result.json")
+        hyp.run(dry_run=False, hb_result_file="hb_result.json",
+                hb_best_result_file="hb_best_result.json")
 
 
 # car on a argument test dont on n'a pas besoin

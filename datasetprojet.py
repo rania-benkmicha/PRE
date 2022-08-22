@@ -16,6 +16,9 @@ from torchvision import transforms, utils
 
 warnings.filterwarnings("ignore")
 
+DATASET = "datasets/dataset_sample_bag/"
+#DATASET = "datasets/dataset_rania_2022-07-01-11-40-52/"
+
 
 class DataProject(Dataset):
     def __init__(self, csv_file, root_dir, transform=None):
@@ -91,11 +94,8 @@ def data_plot(dataproject, cols, rows):
     plt.close()
    # loading data
 
-# data_plot(training_data,5,5)
-
 
 # rescaling image's size
-
 
 class Rescale(object):
 
@@ -177,41 +177,6 @@ class RandomCrop(object):
         return image
 
 
-#######
-
-
-data_transforms = transforms.Compose([
-
-    # Normalize(t[0],t[1]),
-    # Apply histogram equalization
-    Rescale(280),
-    RandomCrop(225),
-    ToTensor(),
-
-
-
-    # Add channel dimension to be able to apply convolutions
-
-])
-
-
-# normalize images for regression problems
-
-training_data = DataProject(
-    csv_file='datasets/dataset_sample_bag/imu.csv', root_dir='datasets/dataset_sample_bag/_zed_node_rgb_image_rect_color', transform=data_transforms
-)
-
-# training_data = DataProject(
-#     csv_file='datasets/dataset_rania_2022-07-01-11-40-52/imu.csv', root_dir='datasets/dataset_rania_2022-07-01-11-40-52/_zed_node_rgb_image_rect_color', transform=data_transforms
-
-# )
-
-
-
-# print(len(training_data))
-# data_plot(training_data,5,5)
-
-
 def calcul_moy_std(training_data):
 
     sumr = 0
@@ -224,7 +189,7 @@ def calcul_moy_std(training_data):
         training_data), num_workers=8)
     data = next(iter(loader))
     m = (data['image'][0]).numpy()
-# je suis pas sur de mean axis
+    # je suis pas sur de mean axis
 
     h, w, c = m.shape
     for i in data['image']:
@@ -311,14 +276,9 @@ data_transforms1 = transforms.Compose([
 
 
 training_data1 = DataProject(
-    csv_file='datasets/dataset_sample_bag/imu.csv', root_dir='datasets/dataset_sample_bag/_zed_node_rgb_image_rect_color', transform=data_transforms1
+    csv_file=DATASET+'/imu.csv', root_dir=DATASET+'/_zed_node_rgb_image_rect_color', transform=data_transforms1
 )
 
-
-# training_data1 = DataProject(
-#     csv_file='datasets/dataset_rania_2022-07-01-11-40-52/imu.csv', root_dir='datasets/dataset_rania_2022-07-01-11-40-52/_zed_node_rgb_image_rect_color', 
-#     transform=data_transforms1
-# )
 
 
 # loading data in an iterator dataloader
@@ -346,7 +306,7 @@ def show_landmarks_batch(sample_batched):
 def load(training_data1, Batch_size):
     L = len(training_data1)
 
-# un choix
+    # un choix
 
     train_count = int(0.8 * L)
 
@@ -376,7 +336,7 @@ def load(training_data1, Batch_size):
             show_landmarks_batch(sample_batched)
             #print(sample_batched ['image'])
 
-            print('hh', sample_batched['image'][1].size())
+            #print('hh', sample_batched['image'][1].size())
 
             plt.title((sample_batched['landmarks']).tolist())
             plt.axis('off')
@@ -394,4 +354,4 @@ def load(training_data1, Batch_size):
             # plt.show()
             break
     return dataloaders
-# load(training_data1,8)
+
