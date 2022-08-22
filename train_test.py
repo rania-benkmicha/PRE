@@ -1,12 +1,7 @@
 import argparse
-import csv as csv
-import os
 
 import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 import torch
-import torchvision
 from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms, utils
@@ -179,6 +174,7 @@ def main(arg, num_epochs=10):
 
             grid = utils.make_grid(images_batch)
             # from tensor to ndarray
+            plt.clf()
             plt.imshow(grid.numpy().transpose((1, 2, 0)))
             plt.title(outputs.cpu().tolist())
             plt.show()

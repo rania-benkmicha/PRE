@@ -40,7 +40,7 @@ class DataProject(Dataset):
         landmarks = float(landmarks)
 
         sample = {'image': image, 'landmarks': landmarks}
-# hne 5ater ye5dedh dict
+        # hne 5ater ye5dedh dict
 
         if self.transform:
             sample['image'] = self.transform(sample['image'])
@@ -92,9 +92,6 @@ def data_plot(dataproject, cols, rows):
    # loading data
 
 # data_plot(training_data,5,5)
-
-
-# transformation des images:
 
 
 # rescaling image's size

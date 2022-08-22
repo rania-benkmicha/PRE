@@ -1,11 +1,12 @@
+"""
+Script to convert a bagfile containing images, IMU and odometry into
+a self-supervised dataset for traversability analysis
+"""
 import csv
-import io
 import os
-import string
 import sys
 import time
 
-import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -13,8 +14,7 @@ import rosbag
 import rospy
 from cv_bridge import CvBridge
 from PIL import Image
-from sensor_msgs.msg import Image
-from skimage import color, io
+
 
 debut = time.time()
 
@@ -40,7 +40,9 @@ DELTA_D = 1
 # Threshold for matching distance
 EPSILON_D = 0.3
 
-# Verifie les arguments du script. On peut soit appeler le script en tapant "python read_bags.py" soit "python read_bags.py nom_du_rosbag.bag"
+# Verifie les arguments du script. On peut soit appeler le script
+# en tapant "python read_bags.py" soit "python read_bags.py nom_du_rosbag.bag"
+
 if len(sys.argv) > 2:
     print("invalid number of arguments:   " + str(len(sys.argv)))
     print("should be 2: 'read_bags.py' and 'bagName'")
@@ -64,7 +66,8 @@ else:
 
 
 count = 0
-for bagFile in listOfBagFiles:  # On fait les calculs/sauvegardes pour chaque rosbags si plusieurs rosbags
+# On fait les calculs/sauvegardes pour chaque rosbags si plusieurs rosbags
+for bagFile in listOfBagFiles:
     count += 1
     print("reading file " + str(count) +
           " of  " + numberOfFiles + ": " + bagFile)
@@ -78,31 +81,32 @@ for bagFile in listOfBagFiles:  # On fait les calculs/sauvegardes pour chaque ro
     try:  # on cree le nouveau dossier seulement s'il n'existe pas deja
         os.mkdir(results_dir)
         print(results_dir + " folder created")
-    except:
-        pass
+    except  OSError:
+        exit()
 
 
 #######
 
-    numberOfImages = []
+    numberOfImages = {}
 
-    # Calcul du nombres de donnees a enregistrer en se basant sur le nombre d'images dans le flux video.
-    # Le flux video est le facteur limitant en terme de nombre de donnees.
+    # Calcul du nombres de donnees a enregistrer en se basant sur le nombre d'images
+    # dans le flux video. Le flux video est le facteur limitant en terme de nombre de donnees.
 
-    for i in range(len(listOfImageTopics)):  # pour chaque flux d'image :
+    for img_topic in listOfImageTopics:  # pour chaque flux d'image :
 
         # Calcul de la nouvelle frequence d'echantillonage en fonction du downsampling ratio
         max_frequency = bag.get_type_and_topic_info(
-        )[1][str(listOfImageTopics[i])][3]
-        numberOfImages.append(bag.get_type_and_topic_info()[
-                              1][str(listOfImageTopics[i])][1])
-        print("\nThere are " + str(numberOfImages[i]) +
-              " images in the " + listOfImageTopics[i] + " topic.")
-        print(listOfImageTopics[i] + " frequency is %.2f Hz. Downsampling ratio is " %
+        )[1][str(img_topic)][3]
+        numberOfImages[str(img_topic)] = bag.get_type_and_topic_info()[
+                              1][str(img_topic)][1]
+        print("\nThere are " + str(numberOfImages[str(img_topic)]) +
+              " images in the " + img_topic + " topic.")
+        print(img_topic + " frequency is %.2f Hz. Downsampling ratio is " %
               max_frequency + str(DOWNSAMPLING_RATIO) + ".")
         new_frequency = max_frequency/DOWNSAMPLING_RATIO
-        # Demande confirmation pour continuer en fonction de la nouvelle frequence moyenne des donnees
-        # Pour arreter, ecrire "No" dans le terminal. Sinon, pour continuer, n'importe quelle touche fonctionne en plus de "Yes"
+        # Demande confirmation pour continuer en fonction de la nouvelle frequence moyenne
+        # des donnees. Pour arreter, ecrire "No" dans le terminal. Sinon, pour continuer,
+        # n'importe quelle touche fonctionne en plus de "Yes"
         print("New mean frequency will be %.2f Hz. Continue ?" % new_frequency)
         answer = input("Yes/No\n")
         if answer == "No":
@@ -112,9 +116,11 @@ for bagFile in listOfBagFiles:  # On fait les calculs/sauvegardes pour chaque ro
 
 #########
 
-    # timestamp = nom de l'indicateur de temps pour ros. Utile car ne depend pas du topic, reste le meme d'un topic a l'autre
+    # timestamp = nom de l'indicateur de temps pour ros. Utile car ne depend pas du topic,
+    # reste le meme d'un topic a l'autre
     listTimestampImages = []
-    # on garde les timestamp pour ensuite pouvoir recuperer les donnees qui correspondent aux instants ou les images ont ete prises.
+    # on garde les timestamp pour ensuite pouvoir recuperer les donnees qui correspondent
+    # aux instants ou les images ont ete prises.
     listnum = []
     # pour chaque flux d'image :
     for i in range(len(listOfImageTopics)):
@@ -128,7 +134,7 @@ for bagFile in listOfBagFiles:  # On fait les calculs/sauvegardes pour chaque ro
         # creation d'un dossier s'il n'existe pas deja
         try:
             os.mkdir(topicDir)
-        except:
+        except OSError:
             pass
 
         # creation d'un csv avec les timestamp
@@ -161,8 +167,8 @@ for bagFile in listOfBagFiles:  # On fait les calculs/sauvegardes pour chaque ro
                     count_i += 1
                     num = num+1
 
-            else:  # Pour les autres topic avec images on enregistre les donnees qui correspondent aux images "principales" s'il y en a
-                # avec une tolerance de epsilon seconde
+            else:  # Pour les autres topic avec images on enregistre les donnees qui correspondent 
+                # aux images "principales" s'il y en a avec une tolerance de epsilon seconde
 
                 last_t = t0
                 for t_image in listTimestampImages:
@@ -184,7 +190,8 @@ for bagFile in listOfBagFiles:  # On fait les calculs/sauvegardes pour chaque ro
 
                             last_t = t
 
-                            # si une image correspond a un timestamp on arrête de parcourir le rosbag et on passe aux images du topic principal suivantes.
+                            # si une image correspond a un timestamp on arrête de parcourir le rosbag
+                            # et on passe aux images du topic principal suivantes.
                             break
 
     # chaque image à son delta_t
@@ -193,7 +200,8 @@ for bagFile in listOfBagFiles:  # On fait les calculs/sauvegardes pour chaque ro
     comp = 0
     last_t = t0
     listof_delta_t = []
-    for t_image in listTimestampImages:  # on compare chaque instant du topic avec les instants "t_image" ou nous avons sauvegarde une image
+    for t_image in listTimestampImages:  # on compare chaque instant du topic avec les instants 
+                                         # "t_image" ou nous avons sauvegarde une image
 
         comp = comp+1
         print('compteur', comp)
@@ -270,12 +278,13 @@ for bagFile in listOfBagFiles:  # On fait les calculs/sauvegardes pour chaque ro
                 filewriter = csv.writer(csvfile, delimiter=',')
                 firstIteration = True  # allows header row
                 i = -1
-# importante ici
+                # importante ici
                 last_t = t0
-                for t_image in listTimestampImages:  # on compare chaque instant du topic avec les instants "t_image" ou nous avons sauvegarde une image
+                for t_image in listTimestampImages:  # on compare chaque instant du topic avec les instants
+                                                     # "t_image" ou nous avons sauvegarde une image
                     i = i+1
                     # print("lats_ttttt",last_t)
-                    #print("t imge est ", t_image)
+                    # print("t imge est ", t_image)
 
                     # for each instant in time that has data for topicName
                     for subtopic, msg, t in bag.read_messages(topicName, start_time=last_t):
@@ -342,7 +351,8 @@ for bagFile in listOfBagFiles:  # On fait les calculs/sauvegardes pour chaque ro
                                     values.append(pair[1])
                             filewriter.writerow(values)
 
-                            # si une donnee IMU correspond a un timestamp image on passe aux donnees IMU suivantes.
+                            # si une donnee IMU correspond a un timestamp image on passe 
+                            # aux donnees IMU suivantes.
                             break
                             # on ne veut pas que pour une image il y ait plusieurs donnees imu
 
@@ -360,7 +370,7 @@ print("Le traitement des donnees a dure " + str(round(fin - debut, 1)) + " s.")
 # Should be integrated directly in the script above...
 
 df_train = pd.read_csv(results_dir + '/_imu_data.csv')
-df_train
+
 print(df_train.iloc[:, [1]])
 tab = np.array(df_train.iloc[:, [1]])
 
@@ -372,5 +382,5 @@ tab[len(tab)-1][0] = (abs(tab[len(tab)-1][0])+abs(tab[len(tab)-2][0]))/2
 print(tab)
 # print(tab[940])
 df_train['y'] = tab
-df_train
+
 df_train.to_csv(results_dir + '/imu.csv', index=False)
