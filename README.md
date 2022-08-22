@@ -16,9 +16,9 @@ This project is about learning to estimate terrain traversability from vision fo
 
 - `train_test.py` will lanch training and test of the model
 
-- `get.py` generates random hyperparameters configurations
+- `generate_rand_params.py` generates random hyperparameters configurations
 
-- `hyperband.py` will optimize hyper-parameters
+- `hyperband.py` definitions for hyperband algorithm
 
 - `modele_simple.py` contains the description of the neural networks
 
@@ -38,7 +38,7 @@ where:
 
 - `weight decay` is the weight of L2 regularization.
 
-- `hyp` S'il est égal 0 signifie qu'on est en train de vérifier le modèle avec nos choix de paramètres. S'il est égale à 1 ,cela signifie q'on lance l'algorithme d'optimisation de paramètres "hyperband".
+- `hyp` should be 0 to train with hyper-parameters given as parameters, or 1 to run hyperband
 
 - `modelnetwork` can be "AlexNet" or "ResNet".
 

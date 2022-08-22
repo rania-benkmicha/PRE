@@ -8,7 +8,7 @@ from torchvision import datasets, transforms, utils
 
 import datasetprojet as d
 import model_simple as m
-from get import get_params
+from generate_rand_params import get_params
 from hyperband import Hyperband
 
 
@@ -177,7 +177,8 @@ def main(arg, num_epochs=10):
             plt.clf()
             plt.imshow(grid.numpy().transpose((1, 2, 0)))
             plt.title(outputs.cpu().tolist())
-            plt.show()
+            plt.savefig("test_images.png")
+            plt.close()
             ####
         test_error_final = test_loss_final/(len(test_loader)*Batch_size)
         print(f" testing loss = {test_error_final}")
