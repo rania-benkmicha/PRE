@@ -87,8 +87,8 @@ def data_plot(dataproject, cols, rows):
         plt.title("distribution of pixels")
         plt.subplots_adjust(wspace=1, hspace=1)
 
-    plt.show()
-
+    plt.savefig("sample_training_data.png")
+    plt.close()
    # loading data
 
 # data_plot(training_data,5,5)
@@ -199,8 +199,13 @@ data_transforms = transforms.Compose([
 
 training_data = DataProject(
     csv_file='datasets/dataset_sample_bag/imu.csv', root_dir='datasets/dataset_sample_bag/_zed_node_rgb_image_rect_color', transform=data_transforms
-
 )
+
+# training_data = DataProject(
+#     csv_file='datasets/dataset_rania_2022-07-01-11-40-52/imu.csv', root_dir='datasets/dataset_rania_2022-07-01-11-40-52/_zed_node_rgb_image_rect_color', transform=data_transforms
+
+# )
+
 
 
 # print(len(training_data))
@@ -280,15 +285,15 @@ class Normalize(object):
 #print('le coue',t)
 
 
-imgs = torch.stack([training_data[i]['image']
-                   for i in range(len(training_data))], dim=3)
-# print(len(imgs))
-# print(imgs[0])
-print('ici', imgs.shape)
-mean = tuple(torch.Tensor.float(imgs.view(3, -1)).mean(dim=1).tolist())
-ecart = tuple(torch.Tensor.float(imgs.view(3, -1)).std(dim=1).tolist())
-print(mean, ecart)
-t = (mean, ecart)
+# imgs = torch.stack([training_data[i]['image']
+#                    for i in range(len(training_data))], dim=3)
+# # print(len(imgs))
+# # print(imgs[0])
+# print('ici', imgs.shape)
+# mean = tuple(torch.Tensor.float(imgs.view(3, -1)).mean(dim=1).tolist())
+# ecart = tuple(torch.Tensor.float(imgs.view(3, -1)).std(dim=1).tolist())
+# print(mean, ecart)
+# t = (mean, ecart)
 
 data_transforms1 = transforms.Compose([
 
@@ -308,6 +313,12 @@ data_transforms1 = transforms.Compose([
 training_data1 = DataProject(
     csv_file='datasets/dataset_sample_bag/imu.csv', root_dir='datasets/dataset_sample_bag/_zed_node_rgb_image_rect_color', transform=data_transforms1
 )
+
+
+# training_data1 = DataProject(
+#     csv_file='datasets/dataset_rania_2022-07-01-11-40-52/imu.csv', root_dir='datasets/dataset_rania_2022-07-01-11-40-52/_zed_node_rgb_image_rect_color', 
+#     transform=data_transforms1
+# )
 
 
 # loading data in an iterator dataloader
@@ -370,7 +381,7 @@ def load(training_data1, Batch_size):
             plt.title((sample_batched['landmarks']).tolist())
             plt.axis('off')
             plt.ioff()
-            plt.show()
+            #plt.show()
             plt.figure(2)
             grid = utils.make_grid(sample_batched['image'][0])
             k = grid.numpy().transpose((1, 2, 0))
