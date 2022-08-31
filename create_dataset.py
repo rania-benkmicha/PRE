@@ -31,9 +31,9 @@ DOWNSAMPLING_RATIO = 2
 EPSILON_T = 0.1
 
 # Distance between robot position dans point seen at the center of the camera
-DELTA_D = 2.5
+DELTA_D = 3
 # Threshold for matching distance
-EPSILON_D = 0.2
+EPSILON_D = 0.25
 # Threshold for direction (robot should follow a straight line)
 EPSILON_ALPHA = 10.0 / 180.0 * pi
 
