@@ -16,8 +16,8 @@ from torchvision import transforms, utils
 
 warnings.filterwarnings("ignore")
 
-DATASET = "datasets/dataset_sample_bag/"
-#DATASET = "datasets/dataset_rania_2022-07-01-11-40-52/"
+#DATASET = "datasets/dataset_sample_bag/"
+DATASET = "datasets/dataset_rania_2022-07-01-11-40-52/"
 
 
 class DataProject(Dataset):
@@ -55,7 +55,6 @@ class DataProject(Dataset):
         img_name = os.path.join(self.root_dir,
                                 self.data_frame.iloc[5, 0])
         image = io.imread(img_name)
-        output = type(image)
         tupleee = image.shape
         print(tupleee)
 
@@ -276,9 +275,8 @@ data_transforms1 = transforms.Compose([
 
 
 training_data1 = DataProject(
-    csv_file=DATASET+'/imu.csv', root_dir=DATASET+'/_zed_node_rgb_image_rect_color', transform=data_transforms1
+    csv_file=DATASET+'/_imu_data.csv', root_dir=DATASET+'/_zed_node_rgb_image_rect_color', transform=data_transforms1
 )
-
 
 
 # loading data in an iterator dataloader
@@ -303,7 +301,7 @@ def show_landmarks_batch(sample_batched):
     #plt.title('Batch from dataloader')
 
 
-def load(training_data1, Batch_size):
+def load(training_data1, batch_size):
     L = len(training_data1)
 
     # un choix
@@ -317,11 +315,11 @@ def load(training_data1, Batch_size):
     train_dataset, valid_dataset, test_dataset = torch.utils.data.random_split(
         training_data1, [train_count, valid_count, test_count])
     train_loader = DataLoader(
-        train_dataset, batch_size=Batch_size, shuffle=True, num_workers=4)
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, drop_last=True)
     valid_loader = DataLoader(
-        valid_dataset, batch_size=Batch_size, shuffle=True, num_workers=4)
+        valid_dataset, batch_size=batch_size, shuffle=True, num_workers=4, drop_last=True)
     test_loader = DataLoader(
-        test_dataset, batch_size=Batch_size, shuffle=False, num_workers=4)
+        test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, drop_last=True)
 
     dataloaders = {'train': train_loader,
                    'valid': valid_loader, 'test': test_loader}
