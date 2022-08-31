@@ -22,7 +22,7 @@ This project is about learning to estimate terrain traversability from vision fo
 
 - `modele_simple.py` contains the description of the neural networks
 
-- `datasetprojet.py` defines dataloaders and data augmentation
+- `loader.py` defines dataloaders and data augmentation
 
 # Code usage
 
