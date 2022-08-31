@@ -6,26 +6,22 @@ import csv
 import os
 import sys
 import time
+from math import atan2, pi, sqrt
 
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import rosbag
 import rospy
 from cv_bridge import CvBridge
 from PIL import Image
-
+from tf.transformations import euler_from_quaternion
+from tqdm import tqdm
 
 debut = time.time()
 
-# Variables
-# Liste des topics avec images qu'on veut sauvegarder
-listOfImageTopics = ['/zed_node/rgb/image_rect_color'] # , '/zed_node/depth/depth_registered']
-# /!\ a mettre dand l'ordre des priorites si un topic
-# est plus important que l'autre. Mettre en premier le topic principal
-
-# Autres topics qu'on veut sauvegarder
-listOfTopics = ["/imu/data", "/odometry/filtered"]
+# Topic names
+IMAGE_TOPIC = '/zed_node/rgb/image_rect_color'
+ODOM_TOPIC = "/odometry/filtered"
+IMU_TOPIC = "/imu/data"
 
 # Downsamplig ratio, par exemple s'il vaut 5, une donnee sur 5 sera enregistree
 DOWNSAMPLING_RATIO = 2
@@ -35,10 +31,11 @@ DOWNSAMPLING_RATIO = 2
 EPSILON_T = 0.1
 
 # Distance between robot position dans point seen at the center of the camera
-DELTA_D = 1
-
+DELTA_D = 2.5
 # Threshold for matching distance
-EPSILON_D = 0.3
+EPSILON_D = 0.2
+# Threshold for direction (robot should follow a straight line)
+EPSILON_ALPHA = 10.0 / 180.0 * pi
 
 # Verifie les arguments du script. On peut soit appeler le script
 # en tapant "python read_bags.py" soit "python read_bags.py nom_du_rosbag.bag"
@@ -49,16 +46,15 @@ if len(sys.argv) > 2:
     print("or just 1: 'read_bags.py'")
     sys.exit(1)
 elif len(sys.argv) == 2:
-    listOfBagFiles = [sys.argv[1]]
-    numberOfFiles = "1"
-    print("reading only 1 bagfile: " + str(listOfBagFiles[0]))
+    list_of_bag_files = [sys.argv[1]]
+    number_of_files = len(list_of_bag_files)
+    print(f"reading only 1 bagfile: {str(list_of_bag_files[0])}")
 elif len(sys.argv) == 1:
     # get list of only bag files in current dir.
-    listOfBagFiles = [f for f in os.listdir(".") if f[-4:] == ".bag"]
-    numberOfFiles = str(len(listOfBagFiles))
-    print("reading all " + numberOfFiles +
-          " bagfiles in current directory: \n")
-    for f in listOfBagFiles:
+    list_of_bag_files = [f for f in os.listdir(".") if f[-4:] == ".bag"]
+    number_of_files = len(list_of_bag_files)
+    print(f"reading all {number_of_files} bagfiles in current directory: \n")
+    for f in list_of_bag_files:
         print(f)
 else:
     print("bad argument(s): " + str(sys.argv))  # shouldnt really come up
@@ -67,10 +63,10 @@ else:
 
 count = 0
 # On fait les calculs/sauvegardes pour chaque rosbags si plusieurs rosbags
-for bagFile in listOfBagFiles:
+for bagFile in list_of_bag_files:
     count += 1
     print("reading file " + str(count) +
-          " of  " + numberOfFiles + ": " + bagFile)
+          " of  " + str(number_of_files) + ": " + bagFile)
     # acces au rosbag
     bag = rosbag.Bag(bagFile)
     bagContents = bag.read_messages()
@@ -81,306 +77,157 @@ for bagFile in listOfBagFiles:
     try:  # on cree le nouveau dossier seulement s'il n'existe pas deja
         os.mkdir(results_dir)
         print(results_dir + " folder created")
-    except  OSError:
+    except OSError:
+        print("Existing directory " + results_dir)
+        print("Aborting")
         exit()
 
+    #########
+    # Write images on disk and create a list of their timestamps
+    #########
 
-#######
-
-    numberOfImages = {}
-
-    # Calcul du nombres de donnees a enregistrer en se basant sur le nombre d'images
-    # dans le flux video. Le flux video est le facteur limitant en terme de nombre de donnees.
-
-    for img_topic in listOfImageTopics:  # pour chaque flux d'image :
-
-        # Calcul de la nouvelle frequence d'echantillonage en fonction du downsampling ratio
-        max_frequency = bag.get_type_and_topic_info(
-        )[1][str(img_topic)][3]
-        numberOfImages[str(img_topic)] = bag.get_type_and_topic_info()[
-                              1][str(img_topic)][1]
-        print("\nThere are " + str(numberOfImages[str(img_topic)]) +
-              " images in the " + img_topic + " topic.")
-        print(img_topic + " frequency is %.2f Hz. Downsampling ratio is " %
-              max_frequency + str(DOWNSAMPLING_RATIO) + ".")
-        new_frequency = max_frequency/DOWNSAMPLING_RATIO
-        # Demande confirmation pour continuer en fonction de la nouvelle frequence moyenne
-        # des donnees. Pour arreter, ecrire "No" dans le terminal. Sinon, pour continuer,
-        # n'importe quelle touche fonctionne en plus de "Yes"
-        print("New mean frequency will be %.2f Hz. Continue ?" % new_frequency)
-        answer = input("Yes/No\n")
-        if answer == "No":
-            exit()
-
-
-
-#########
+    full_image_list = []  # will contain, (timestamp of image, image name)
 
     # timestamp = nom de l'indicateur de temps pour ros. Utile car ne depend pas du topic,
     # reste le meme d'un topic a l'autre
-    listTimestampImages = []
     # on garde les timestamp pour ensuite pouvoir recuperer les donnees qui correspondent
     # aux instants ou les images ont ete prises.
-    listnum = []
-    # pour chaque flux d'image :
-    for i in range(len(listOfImageTopics)):
-        print(listOfImageTopics[i])
 
-        bridge = CvBridge()
-        topicName = listOfImageTopics[i].replace('/', '_')
-        topicDir = results_dir + "/" + topicName
-        count_i = 0
+    bridge = CvBridge()
+    topic_name = IMAGE_TOPIC.replace('/', '_')
+    topic_dir = results_dir + "/" + topic_name
 
-        # creation d'un dossier s'il n'existe pas deja
-        try:
-            os.mkdir(topicDir)
-        except OSError:
-            pass
+    # creation d'un dossier s'il n'existe pas deja
+    try:
+        os.mkdir(topic_dir)
+        print(topic_dir + " folder created")
+    except OSError:
+        pass
 
-        # creation d'un csv avec les timestamp
-        csvname = topicDir + "/" + topicName + ".csv"
-        with open(csvname, 'w') as csvfile:
-            filewriter = csv.writer(csvfile, delimiter=',')
+    print("Writing images")
 
-            if i == 0:  # On enregistre les donnees de maniere naive pour le 1er topic, le topic "principal"
-                num = 1
-                for topic, msg, t in bag.read_messages(topics=listOfImageTopics[i]):
-                    if count_i == 0:
-                        # ecriture 1ere ligne du csv
-                        filewriter.writerow(["TimeStamp"])
-                        t0 = t
+    # creation d'un csv avec les timestamp
+    csvname = topic_dir + "/" + topic_name + ".csv"
+    with open(csvname, 'w') as csvfile:
+        filewriter = csv.writer(csvfile, delimiter=',')
 
-                    if count_i % DOWNSAMPLING_RATIO == 0:  # on sauvegarde uniquement une donnee sur "downsamplingRatio"
-                        cv_img = bridge.imgmsg_to_cv2(
-                            msg, desired_encoding="rgb8")
-                        im = Image.fromarray(cv_img)
+        # ecriture 1ere ligne du csv
+        filewriter.writerow(["TimeStamp"])
 
-                        im = im.convert('RGB')
+        pbar = tqdm(total=bag.get_message_count(IMAGE_TOPIC))
+        for image_number, (topic, msg, t) in enumerate(bag.read_messages(topics=IMAGE_TOPIC)):
+            pbar.update()
+            if image_number == 0:
+                t0 = t  # save timestamp of first image for later
+            if image_number % DOWNSAMPLING_RATIO == 0:  # on sauvegarde uniquement une donnee sur "downsamplingRatio"
+                cv_img = bridge.imgmsg_to_cv2(
+                    msg, desired_encoding="rgb8")
+                im = Image.fromarray(cv_img)
 
-                        im.save(topicDir + "/" +
-                                "{:05d}".format(num) + ".png", "PNG")
+                im = im.convert('RGB')
+                image_name = f"{image_number:05d}.png"
+                im.save(topic_dir + "/" +
+                        image_name, "PNG")
 
-                        # on remplit la liste avec les instants qu'on veut sauvegarder
-                        listTimestampImages.append(rospy.Time.to_sec(t))
-                        listnum.append("{:05d}".format(num))
-                        filewriter.writerow([str(t)])
-                    count_i += 1
-                    num = num+1
+                # on remplit la liste avec les instants qu'on veut sauvegarder
+                full_image_list.append((rospy.Time.to_sec(t), image_name))
+                filewriter.writerow([str(t)])
+        pbar.close()
+        print(
+            f"Wrote {int(bag.get_message_count(IMAGE_TOPIC)/DOWNSAMPLING_RATIO + 1)} images")
 
-            else:  # Pour les autres topic avec images on enregistre les donnees qui correspondent 
-                # aux images "principales" s'il y en a avec une tolerance de epsilon seconde
+    ########
+    # For each image, find timestamp where the robot reaches the position
+    # at the center of the image according to odometry, and remove image if nothing matches
+    ########
 
-                last_t = t0
-                for t_image in listTimestampImages:
-                    for topic, msg, t in bag.read_messages(topics=listOfImageTopics[i], start_time=last_t):
-                        # on sauvegarde uniquement si l'instant est assez proche
-                        if rospy.Time.to_sec(t) < t_image + EPSILON_T:
-                            # des images deja sauvegardees
-                            cv_img = bridge.imgmsg_to_cv2(
-                                msg, desired_encoding="rgb8")
-                            im = Image.fromarray(cv_img)
-                            #im = im.convert("RGB")
-                            # pour controler le nom de l'image
-                            #ch=topicDir + "/" + str(t) + ".png"
-                            # plt.savefig(ch)
-                            im.save(topicDir + "/" +
-                                    "{:05d}".format(t) + ".png", "PNG")
+    print("Filtering images that have corresponding positions")
+    # will contain, (timestamp of image, image name, timestamp of position in front of robot)
+    filtered_image_list = []
+    last_t = t0  # start from the timestamp of first image
 
-                            filewriter.writerow([str(t)])
-
-                            last_t = t
-
-                            # si une image correspond a un timestamp on arrête de parcourir le rosbag
-                            # et on passe aux images du topic principal suivantes.
-                            break
-
-    # chaque image à son delta_t
-    # print(len(listnum))
-    indice = listOfTopics.index('/odometry/filtered')
-    comp = 0
-    last_t = t0
-    listof_delta_t = []
-    for t_image in listTimestampImages:  # on compare chaque instant du topic avec les instants 
-                                         # "t_image" ou nous avons sauvegarde une image
-
-        comp = comp+1
-        print('compteur', comp)
-        for subtopic, msg, t in bag.read_messages(listOfTopics[indice], start_time=last_t):
+    pbar = tqdm(total=len(full_image_list))
+    # on compare chaque instant du topic avec les instants
+    for image_number, (t_image, image_name) in enumerate(full_image_list):
+        # "t_image" ou nous avons sauvegarde une image
+        pbar.update()
+        for subtopic, msg, t in bag.read_messages(ODOM_TOPIC, start_time=last_t):
             if rospy.Time.to_sec(t) < t_image + EPSILON_T and rospy.Time.to_sec(t) > t_image - EPSILON_T:
-
                 last_t = t
-               # decomposer x initial
 
-                msgString2 = str(msg)
-                # print(msg)
-                msgList2 = str.split(msgString2, '\n')
-                # print(msgList)
-                instantaneousListOfData2 = []
-                pos2 = msgList2.index('    position: ')
+                # get position at the time of image
+                ref_position = msg.pose.pose.position
+                orientation_q = msg.pose.pose.orientation
+                quat_list = [orientation_q.x, orientation_q.y,
+                             orientation_q.z, orientation_q.w]
+                _, _, ref_yaw = euler_from_quaternion(quat_list)
 
-                msgList2 = [msgList2[pos2+1]]
+                # check for first future pose for correct displacement, and store its time
+                for subtopic_2, msg_2, t_2 in bag.read_messages(ODOM_TOPIC, start_time=t):
+                    new_position = msg_2.pose.pose.position
 
-                # print(msgList)
-                for nameValuePair in msgList2:
-                    splitPair = str.split(nameValuePair, ':')
-                    for i in range(len(splitPair)):  # should be 0 to 1
-                        splitPair[i] = str.strip(splitPair[i])
-                    instantaneousListOfData2.append(splitPair)
-                for Pair in instantaneousListOfData2:
-                    x0 = Pair[1]
-                    print('x0', x0)
-                    # time.sleep(4)
+                    # motion direction since ref pose
+                    alpha = atan2(new_position.y - ref_position.y,
+                                  new_position.x - ref_position.x) - ref_yaw
 
-                for subtopic, msg, t1 in bag.read_messages(listOfTopics[indice], start_time=t):
-                    # je vais decomposer le msg pour avoir le x
-                    # print('ok')
-                    msgString1 = str(msg)
-                    # print(msg)
-                    msgList1 = str.split(msgString1, '\n')
-                    # print(msgList)
-                    instantaneousListOfData1 = []
-                    pos1 = msgList1.index('    position: ')
+                    # travelled distance
+                    dist = sqrt((new_position.x - ref_position.x)*(new_position.x - ref_position.x)
+                                + (new_position.y - ref_position.y)*(new_position.y - ref_position.y))
 
-                    msgList1 = [msgList1[pos1+1]]
-
-                # print(msgList)
-                    for nameValuePair in msgList1:
-                        splitPair = str.split(nameValuePair, ':')
-                        for i in range(len(splitPair)):  # should be 0 to 1
-                            splitPair[i] = str.strip(splitPair[i])
-                            instantaneousListOfData1.append(splitPair)
-                    for Pair in instantaneousListOfData1:
-                        x = Pair[1]
-                        # print('x',x)
-                    if abs(float(x)-float(x0)) > DELTA_D-EPSILON_D and abs(float(x)-float(x0)) < DELTA_D+EPSILON_D:
-                        delta_t = rospy.Time.to_sec(t1)-rospy.Time.to_sec(t)
-                        # delta_t=rospy.Time.to_sec(delta_t)
-                        listof_delta_t.append(delta_t)
-                        print(delta_t)
-
+                    if dist > DELTA_D-EPSILON_D and abs(alpha) < EPSILON_ALPHA:
+                        filtered_image_list.append(
+                            (t_image, image_name, rospy.Time.to_sec(t_2)))
                         break
-
+                    if dist > DELTA_D+EPSILON_D:
+                        break
                 break
+    pbar.close()
+    print(
+        f"Remaining {len(filtered_image_list)} images that have required data for computing traversability")
 
-    print('delta_t liste', len(listof_delta_t))
-    print(len(listTimestampImages))
-    time.sleep(5)
+    #########
+    # For each remaining image, compute the variance of pitch velocity around the pose in front of the robot
+    #########
 
-    for topicName in listOfTopics:
+    print("Computing traversability")
+    # Create a new CSV file for final data
+    filename = results_dir + '/' + \
+        str.replace(IMU_TOPIC, '/', '_') + '.csv'
 
-        if topicName != '/odometry/filtered':
+    with open(filename, 'w+') as csvfile:
+        filewriter = csv.writer(csvfile, delimiter=',')
+        headers = ["image_id", "y"]  # first column header
+        filewriter.writerow(headers)
 
-            print(topicName)
-            # Create a new CSV file for each topic
-            filename = results_dir + '/' + \
-                str.replace(topicName, '/', '_') + '.csv'
-            with open(filename, 'w+') as csvfile:
-                filewriter = csv.writer(csvfile, delimiter=',')
-                firstIteration = True  # allows header row
-                i = -1
-                # importante ici
-                last_t = t0
-                for t_image in listTimestampImages:  # on compare chaque instant du topic avec les instants
-                                                     # "t_image" ou nous avons sauvegarde une image
-                    i = i+1
-                    # print("lats_ttttt",last_t)
-                    # print("t imge est ", t_image)
+        last_t = t0
+        nbr_valid_imgs = 0
+        pbar = tqdm(total=len(filtered_image_list))
+        for t_image, image_name, t_odom in filtered_image_list:
+            pbar.update()
+            # for each image, we look for the data in IMU_TOPIC
+            pitch_vel_list = []
+            for subtopic, msg, t in bag.read_messages(IMU_TOPIC, start_time=last_t):
+                if rospy.Time.to_sec(t) < t_odom - EPSILON_T:
+                    last_t = t
+                # keep IMU value around the time found with odometry
+                if rospy.Time.to_sec(t) > t_odom - EPSILON_T:
+                    pitch_vel_list.append(msg.angular_velocity.y)
+                if rospy.Time.to_sec(t) > t_odom + EPSILON_T:
+                    break
 
-                    # for each instant in time that has data for topicName
-                    for subtopic, msg, t in bag.read_messages(topicName, start_time=last_t):
-                        # parse data from this instant, which is of the form of multiple lines of "Name: value\n"
-                        #	- put it in the form of a list of 2-element lists
-                        # print("lats_t",last_t)
+            if len(pitch_vel_list) > 2:
+                values = [image_name, np.var(pitch_vel_list)]
+                filewriter.writerow(values)
+                nbr_valid_imgs += 1
+            else:
+                print("No values!")
+    pbar.close()
+    print(
+        f"Remaining {nbr_valid_imgs} images that have required data for traversability")
 
-                       # ****pour compter le retatd des données % aux images
-
-                        msgString1 = str(msg)
-                        msgList1 = str.split(msgString1, '\n')
-                        pos = msgList1.index('angular_velocity: ')
-                        vitesse_angulaire = msgList1[pos+2]
-                        msgList1 = msgList1[pos+2]
-                        splitPair1 = str.split(msgList1, ':')
-                        # print(splitPair1)
-                        # delta_t=distance/float(splitPair1[1])*rayon_de_roue
-
-                        # print(delta_t)
-
-                        # on sauvegarde uniquement si l'instant est assez proche
-                        if rospy.Time.to_sec(t) < t_image + EPSILON_T+listof_delta_t[i] and rospy.Time.to_sec(t) > t_image - EPSILON_T+listof_delta_t[i]:
-                            # des images deja sauvegardees
-
-                            # enlever ce "if" et le "break" ligne 186 si on veut les donnees sur la mission entiere
-                            #print (subtopic)
-                            last_t = t
-                            # je veux les msgs qui concernent  angular velocity
-                            msgString = str(msg)
-                            # print(msg)
-                            msgList = str.split(msgString, '\n')
-                            # print(msgList)
-                            instantaneousListOfData = []
-                            pos = msgList.index('angular_velocity: ')
-                            #pos1=msgList.index('linear_acceleration: ')
-                            # je veux les msgs qui concernent  angular velocity
-                            # msgList=msgList[pos:pos+4]
-                            msgList = [msgList[pos+2]]
-
-                            # print(msgList)
-                            for nameValuePair in msgList:
-                                splitPair = str.split(nameValuePair, ':')
-                                for i in range(len(splitPair)):  # should be 0 to 1
-                                    splitPair[i] = str.strip(splitPair[i])
-                                instantaneousListOfData.append(splitPair)
-                            # print(instantaneousListOfData)
-
-                            # write the first row from the first element of each pair
-                            if firstIteration:  # header
-                                headers = ["image_id"]  # first column header
-                                for pair in instantaneousListOfData:
-                                    headers.append(pair[0])
-                                filewriter.writerow(headers)
-                                firstIteration = False
-                            # write the value from each pair to the file
-                            #values = [str(t)]
-
-                            values = [
-                                listnum[listTimestampImages.index(t_image)]+'.png']
-
-                            for pair in instantaneousListOfData:
-
-                                if len(pair) > 1:
-                                    values.append(pair[1])
-                            filewriter.writerow(values)
-
-                            # si une donnee IMU correspond a un timestamp image on passe 
-                            # aux donnees IMU suivantes.
-                            break
-                            # on ne veut pas que pour une image il y ait plusieurs donnees imu
-
-
-#####
     bag.close()
 
-print("\nDone reading all " + numberOfFiles + " bag files.")
+print(f"\nDone reading all {number_of_files} bag files.")
 
 fin = time.time()
-print("Le traitement des donnees a dure " + str(round(fin - debut, 1)) + " s.")
-
-
-# Ugly hack to compute absolute value and mean of neighboring values.
-# Should be integrated directly in the script above...
-
-df_train = pd.read_csv(results_dir + '/_imu_data.csv')
-
-print(df_train.iloc[:, [1]])
-tab = np.array(df_train.iloc[:, [1]])
-
-
-for i in range(1, len(tab)-1):
-    tab[i][0] = (abs(tab[i-1][0])+abs(tab[i][0])+abs(tab[i+1][0]))/3
-tab[0][0] = (abs(tab[0][0])+abs(tab[1][0]))/2
-tab[len(tab)-1][0] = (abs(tab[len(tab)-1][0])+abs(tab[len(tab)-2][0]))/2
-print(tab)
-# print(tab[940])
-df_train['y'] = tab
-
-df_train.to_csv(results_dir + '/imu.csv', index=False)
+print(f"Processing time: {round(fin - debut, 1)} s.")
