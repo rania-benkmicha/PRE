@@ -6,7 +6,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms, utils
 
-import datasetprojet as d
+import loader as d
 import model_simple as m
 from generate_rand_params import get_params
 from hyperband import Hyperband
@@ -26,7 +26,9 @@ def main(arg, num_epochs=10):
     train_loader = dataloaders['train']
     valid_loader = dataloaders['valid']
     test_loader = dataloaders['test']
-    print("%d images loaded in %d batches" % (len(train_loader)*batch_size,len(train_loader)))
+    print(f"{len(train_loader)*batch_size} images loaded in {len(train_loader)} batches for training")
+    print(f"{len(valid_loader)*batch_size} images loaded in {len(valid_loader)} batches for validation")
+    print(f"{len(test_loader)*batch_size} images loaded in {len(test_loader)} batches for testing")
 
     if modelnetwork == "AlexNet":
         model = m.AlexNet().to(m.device)
@@ -67,9 +69,8 @@ def main(arg, num_epochs=10):
             images = images.to(device=m.device, dtype=torch.float)
             labels = labels.type(torch.float)
             labels = labels.to(m.device)
-           # print(labels)
 
-           # Calculating the model output and the cross entropy loss
+           # Calculating the model output and the loss
             outputs = model(images)
 
             loss = criterion(outputs, labels)
@@ -140,7 +141,7 @@ def main(arg, num_epochs=10):
     # plt.ylim(0,0.5)
     # plt.show()
     plt.legend()
-    plt.savefig('plot.png')
+    plt.savefig('results/loss_curves.png')
     # plt.close()
 
     list_output = []
@@ -176,8 +177,11 @@ def main(arg, num_epochs=10):
             # from tensor to ndarray
             plt.clf()
             plt.imshow(grid.numpy().transpose((1, 2, 0)))
-            plt.title(outputs.cpu().tolist())
-            plt.savefig("test_images.png")
+            liste = [item for sublist in outputs.cpu().tolist()
+                     for item in sublist]
+            titre = [f"{x:.3f} " for x in liste]
+            plt.title(titre)
+            plt.savefig("results/test_images.png")
             plt.close()
             ####
         test_error_final = test_loss_final/(len(test_loader)*batch_size)
