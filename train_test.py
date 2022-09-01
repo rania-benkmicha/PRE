@@ -146,10 +146,11 @@ def main(arg, num_epochs=10):
     test_loss_final = 0.0
     with torch.no_grad():
 
-        collage = Image.new("RGB", (8*225,22*250))
+        collage = Image.new("RGB", (8*225,25+22*250))
         draw = ImageDraw.Draw(collage)
         fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeMono.ttf", 20)
         transform = transforms.ToPILImage()
+        draw.text((225*4-300,0), "Test images, with prediction / groundtruth below", font=fnt, fill=(255, 255, 255, 255))
 
         # Iterating over the training dataset in batches
         for i, samplebatch in enumerate(test_loader):
@@ -160,9 +161,8 @@ def main(arg, num_epochs=10):
             y_true = y_true.type(torch.float)
             y_true = y_true.to(m.device)
 
-        # Calculating outputs for the batch being iterated
+            # Calculating outputs for the batch being iterated
             outputs = model(images)
-            # list_output=list_output+list(outputs.cpu())
 
             loss = criterion(outputs, y_true)
             test_loss_final += loss.item()
@@ -171,35 +171,24 @@ def main(arg, num_epochs=10):
             # un petit code pour voir le test data avec les outputs
             ###
             images_batch = samplebatch['image'] # used to have it in cpu
-            batch_size = len(images_batch)
-            im_size = images_batch.size(2)
-            print(im_size)
-            grid_border_size = 2
+
 
             grid = utils.make_grid(images_batch)
-            print(type(grid))
             image = transform(grid)
-            collage.paste(image, (0,i*250))
+            collage.paste(image, (0,25+i*250))
 
-            liste = [item for sublist in outputs.cpu().tolist()
-                      for item in sublist]
+            pred = [item for sublist in outputs.cpu().tolist()
+                      for item in sublist] # just det a clean list of prediction
+            gt = y_true.tolist()
 
-            for id, y in enumerate(liste):
-                draw.text((80+225*id,225+i*250), f"{y:.5f}", font=fnt, fill=(255, 255, 255, 255))
+            for id, (p,g) in enumerate(zip(pred,gt)):
+                draw.text((30+225*id,25+225+i*250), f"{p:.5f}/{g:.5f}", font=fnt, fill=(255, 255, 255, 255))
 
-            # plt.clf()
-            # plt.imshow(montage)
-            # liste = [item for sublist in outputs.cpu().tolist()
-            #          for item in sublist]
-            # titre = [f"{x:.3f} " for x in liste]
-            # plt.title(titre)
-            # plt.savefig(f"results/test_images_{i:02d}.png")
-            # plt.close()
-            ####
+
+        ### Finished tests
         collage.save("results/test_images.png", "PNG")
         test_error_final = test_loss_final/(len(test_loader)*batch_size)
         print(f" testing loss = {test_error_final}")
-        # print(test_loss_list)
 
     return {"best train loss": best_training_loss, "best_val_loss": best_validation_loss}
 
