@@ -14,6 +14,8 @@ This project is about learning to estimate terrain traversability from vision fo
 
 - `create_dataset.py` will process a bag file to create a self-supervised dataset
 
+- `show_dataset.py` will create a collage of worst and best images from dataset
+
 - `train_test.py` will lanch training and test of the model
 
 - `generate_rand_params.py` generates random hyperparameters configurations
