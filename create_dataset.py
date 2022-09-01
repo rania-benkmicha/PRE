@@ -31,11 +31,15 @@ DOWNSAMPLING_RATIO = 2
 EPSILON_T = 0.1
 
 # Distance between robot position dans point seen at the center of the camera
-DELTA_D = 3
+DELTA_D = 2.5
 # Threshold for matching distance
-EPSILON_D = 0.25
+EPSILON_D = 0.1
 # Threshold for direction (robot should follow a straight line)
-EPSILON_ALPHA = 10.0 / 180.0 * pi
+DELTA_ALPHA = 10.0 / 180.0 * pi
+
+# Time window for gathering IMU data to estimate traversability
+DELTA_T_IMU = 0.2
+
 
 # Verifie les arguments du script. On peut soit appeler le script
 # en tapant "python read_bags.py" soit "python read_bags.py nom_du_rosbag.bag"
@@ -174,7 +178,7 @@ for bagFile in list_of_bag_files:
                     dist = sqrt((new_position.x - ref_position.x)*(new_position.x - ref_position.x)
                                 + (new_position.y - ref_position.y)*(new_position.y - ref_position.y))
 
-                    if dist > DELTA_D-EPSILON_D and abs(alpha) < EPSILON_ALPHA:
+                    if dist > DELTA_D-EPSILON_D and abs(alpha) < DELTA_ALPHA:
                         filtered_image_list.append(
                             (t_image, image_name, rospy.Time.to_sec(t_2)))
                         break
@@ -207,12 +211,12 @@ for bagFile in list_of_bag_files:
             # for each image, we look for the data in IMU_TOPIC
             pitch_vel_list = []
             for subtopic, msg, t in bag.read_messages(IMU_TOPIC, start_time=last_t):
-                if rospy.Time.to_sec(t) < t_odom - EPSILON_T:
+                if rospy.Time.to_sec(t) < t_odom - DELTA_T_IMU:
                     last_t = t
                 # keep IMU value around the time found with odometry
-                if rospy.Time.to_sec(t) > t_odom - EPSILON_T:
+                if rospy.Time.to_sec(t) > t_odom - DELTA_T_IMU:
                     pitch_vel_list.append(msg.angular_velocity.y)
-                if rospy.Time.to_sec(t) > t_odom + EPSILON_T:
+                if rospy.Time.to_sec(t) > t_odom + DELTA_T_IMU:
                     break
 
             if len(pitch_vel_list) > 2:
