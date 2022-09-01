@@ -69,6 +69,8 @@ class AlexNet(nn.Module):
             
             
             nn.Linear(32,1),
+
+            nn.Sigmoid()
             
            
         )
