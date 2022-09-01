@@ -22,10 +22,11 @@ except OSError:
     print("couldn't create results/" + DATASET + " folder")
     exit()
 
-collage = Image.new("RGBA", (1700,880))
+collage = Image.new("RGB", (1700,960))
 draw = ImageDraw.Draw(collage)
 fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeMono.ttf", 40)
 
+draw.text((680,0), "Lowest values", font=fnt, fill=(255, 255, 255, 255))
 pbar = tqdm(total=20)
 for line in range(2):
     for col in range(5):
@@ -33,9 +34,10 @@ for line in range(2):
         img_name = os.path.join(DATASET+'_zed_node_rgb_image_rect_color', sorted_frame.iloc[line*5+col,0])
         image = Image.open(img_name)
         image = image.resize((320,180))
-        collage.paste(image, (10+340*col,line*220))
-        draw.text((100+340*col,180+line*220), f"{sorted_frame.iloc[line*5+col,1]:.5f}", font=fnt, fill=(255, 255, 255, 255))
+        collage.paste(image, (10+340*col,40+line*220))
+        draw.text((100+340*col,220+line*220), f"{sorted_frame.iloc[line*5+col,1]:.5f}", font=fnt, fill=(255, 255, 255, 255))
 
+draw.text((680,480), "Highest values", font=fnt, fill=(255, 255, 255, 255))
 sorted_frame = data_frame.sort_values(by=['y'],ascending=False )
 for line in range(2):
     for col in range(5):
@@ -43,8 +45,8 @@ for line in range(2):
         img_name = os.path.join(DATASET+'_zed_node_rgb_image_rect_color', sorted_frame.iloc[line*5+col,0])
         image = Image.open(img_name)
         image = image.resize((320,180))
-        collage.paste(image, (10+340*col,440+line*220))
-        draw.text((100+340*col,440+180+line*220), f"{sorted_frame.iloc[line*5+col,1]:.5f}", font=fnt, fill=(255, 255, 255, 255))
+        collage.paste(image, (10+340*col,520+line*220))
+        draw.text((100+340*col,440+260+line*220), f"{sorted_frame.iloc[line*5+col,1]:.5f}", font=fnt, fill=(255, 255, 255, 255))
 
 
 collage.save(f"results/{DATASET}collage.png", "PNG")
