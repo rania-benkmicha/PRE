@@ -10,7 +10,27 @@ import loader as d
 import model_simple as m
 from generate_rand_params import get_params
 from hyperband import Hyperband
+from PIL import Image, ImageDraw, ImageFont
 
+
+
+def save_loss_curves(num_epochs, train_loss_list_plot,validation_loss_list_plot):
+    
+    # Plotting loss for all epochs
+    plt.figure(3)
+    plt.xlim((0,num_epochs))
+    plt.plot(train_loss_list_plot,
+             'r', label="training loss")
+    plt.xlabel("Number of epochs")
+
+    plt.plot(validation_loss_list_plot,
+             'b', label="validation loss")
+    plt.xlabel("Number of epochs")
+    plt.ylabel("MSE")
+
+    plt.legend()
+    plt.savefig('results/loss_curves.png')
+    plt.close()
 
 def main(arg, num_epochs=10):
 
@@ -36,7 +56,8 @@ def main(arg, num_epochs=10):
         model = m.ResNet50(num_classes=1).to(m.device)
 
     model.apply(model.init_weights)
-    print(model)
+
+    print(f"Using {modelnetwork} model")
 
 
 # Defining the model hyper parameters
@@ -52,8 +73,8 @@ def main(arg, num_epochs=10):
 
 # Training process begins
     validation_loss_list = []
-
     train_loss_list = []
+
     for epoch in range(num_epochs):
         print(f'Epoch {epoch+1}/{num_epochs}:', end=' ')
         train_loss = 0
@@ -72,7 +93,6 @@ def main(arg, num_epochs=10):
 
            # Calculating the model output and the loss
             outputs = model(images)
-
             loss = criterion(outputs, labels)
 
            # Updating weights according to calculated loss
@@ -85,11 +105,8 @@ def main(arg, num_epochs=10):
         train_loss_list.append(train_loss/(len(train_loader)*batch_size))
         print(f"Training loss = {train_loss_list[-1]}")
 
-       #print( train_loss_list)
 
-
-# validation part
-
+        # validation part
         model.eval()
 
         with torch.no_grad():
@@ -113,43 +130,28 @@ def main(arg, num_epochs=10):
             validation_loss_list.append(
                 valid_loss/(len(valid_loader)*batch_size))
             print(f" validation loss = {validation_loss_list[-1]}")
+
+        save_loss_curves(num_epochs, train_loss_list,validation_loss_list)
+
+
     best_training_loss = min(train_loss_list)
     best_validation_loss = min(validation_loss_list)
     print('best training loss', best_training_loss)
     print('best validation loss', best_validation_loss)
-    # print(test_loss_list)
 
-    train_loss_list_plot = train_loss_list[1:]
-    validation_loss_list_plot = validation_loss_list[1:]
-   # Plotting loss for all epochs
 
-    plt.figure(3)
-   # plt.subplot(211)
-    plt.plot(range(2, num_epochs+1), train_loss_list_plot,
-             'r', label="training loss")
-    plt.xlabel("Number of epochs")
-
-    # plt.ylim(-1,1)
-    # plt.show()
-
-    # plt.subplot(212)
-    plt.plot(range(2, num_epochs+1), validation_loss_list_plot,
-             'b', label="validation loss")
-    plt.xlabel("Number of epochs")
-    plt.ylabel("MSE")
-
-    # plt.ylim(0,0.5)
-    # plt.show()
-    plt.legend()
-    plt.savefig('results/loss_curves.png')
-    # plt.close()
+   # testing part our model with test loader created
 
     list_output = []
-   # testing part our model with test loader created
     test_loss_final = 0.0
     with torch.no_grad():
 
-       # Iterating over the training dataset in batches
+        collage = Image.new("RGB", (8*225,22*250))
+        draw = ImageDraw.Draw(collage)
+        fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeMono.ttf", 20)
+        transform = transforms.ToPILImage()
+
+        # Iterating over the training dataset in batches
         for i, samplebatch in enumerate(test_loader):
             images = samplebatch['image']
             y_true = samplebatch['landmarks']
@@ -168,22 +170,33 @@ def main(arg, num_epochs=10):
             ###
             # un petit code pour voir le test data avec les outputs
             ###
-            images_batch = samplebatch['image']
+            images_batch = samplebatch['image'] # used to have it in cpu
             batch_size = len(images_batch)
             im_size = images_batch.size(2)
+            print(im_size)
             grid_border_size = 2
 
             grid = utils.make_grid(images_batch)
-            # from tensor to ndarray
-            plt.clf()
-            plt.imshow(grid.numpy().transpose((1, 2, 0)))
+            print(type(grid))
+            image = transform(grid)
+            collage.paste(image, (0,i*250))
+
             liste = [item for sublist in outputs.cpu().tolist()
-                     for item in sublist]
-            titre = [f"{x:.3f} " for x in liste]
-            plt.title(titre)
-            plt.savefig("results/test_images.png")
-            plt.close()
+                      for item in sublist]
+
+            for id, y in enumerate(liste):
+                draw.text((80+225*id,225+i*250), f"{y:.5f}", font=fnt, fill=(255, 255, 255, 255))
+
+            # plt.clf()
+            # plt.imshow(montage)
+            # liste = [item for sublist in outputs.cpu().tolist()
+            #          for item in sublist]
+            # titre = [f"{x:.3f} " for x in liste]
+            # plt.title(titre)
+            # plt.savefig(f"results/test_images_{i:02d}.png")
+            # plt.close()
             ####
+        collage.save("results/test_images.png", "PNG")
         test_error_final = test_loss_final/(len(test_loader)*batch_size)
         print(f" testing loss = {test_error_final}")
         # print(test_loss_list)
