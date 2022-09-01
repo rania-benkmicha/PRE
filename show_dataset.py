@@ -22,7 +22,7 @@ except OSError:
     print("couldn't create results/" + DATASET + " folder")
     exit()
 
-collage = Image.new("RGBA", (1700,1000))
+collage = Image.new("RGBA", (1700,880))
 draw = ImageDraw.Draw(collage)
 fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeMono.ttf", 40)
 
