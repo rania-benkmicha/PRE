@@ -44,3 +44,14 @@ where:
 
 - `modelnetwork` can be "AlexNet" or "ResNet".
 
+# TODOs
+
+- Check the quality of the dataset, and the interest of the traversabilty measures
+- Check the frame (axis orientations) of the IMU
+- Gather more data in short sequences with uniform terrains (e.g. all road, all grass, ...)
+- Make more complex image/traversability association, in particular taking robot direction into account
+
+# Perspectives
+
+Check interesting related work :
+- https://antonilo.github.io/vision_locomotion/
